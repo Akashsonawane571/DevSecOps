@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        WORKSPACE_DIR = "${WORKSPACE}"
-    }
-
     stages {
 
         stage('Clone Repository') {
@@ -17,24 +13,25 @@ pipeline {
             }
         }
 
-        sstage('Prepare Dependencies') {
-    steps {
-        echo "Installing dependencies (Node via Docker)..."
-        sh '''
-            if [ -f temp_repo/package.json ]; then
-                echo "Node project detected"
+        stage('Prepare Dependencies') {
+            steps {
+                echo "Installing dependencies (Node via Docker)..."
+                sh '''
+                    if [ -f temp_repo/package.json ]; then
+                        echo "Node project detected"
 
-                docker run --rm \
-                  -v $(pwd)/temp_repo:/app \
-                  -w /app \
-                  node:18-alpine \
-                  npm install --package-lock-only
-            else
-                echo "No package.json found, skipping"
-            fi
-        '''
-    }
-}
+                        docker run --rm \
+                          -v $(pwd)/temp_repo:/app \
+                          -w /app \
+                          node:18-alpine \
+                          npm install --package-lock-only
+                    else
+                        echo "No package.json found, skipping"
+                    fi
+                '''
+            }
+        }
+
         stage('SBOM Generation (Syft)') {
             steps {
                 echo "Generating SBOM..."
@@ -65,11 +62,11 @@ pipeline {
 
         stage('Trivy Scan (CI/CD Gate)') {
             steps {
-                echo "Running Trivy scan..."
-
+                echo "Running Trivy scan (CI/CD Gate)..."
                 sh '''
                     docker run --rm \
                       -v $(pwd):/workspace \
+                      -v trivy-cache:/root/.cache/ \
                       aquasec/trivy:0.49.1 fs /workspace/temp_repo \
                       --scanners vuln \
                       --exit-code 1 \
@@ -101,12 +98,12 @@ pipeline {
             archiveArtifacts artifacts: 'sca/**/*.json', fingerprint: true
         }
 
-        failure {
-            echo "❌ Pipeline failed due to security issues!"
+        success {
+            echo "✅ Pipeline passed all security checks!"
         }
 
-        success {
-            echo "✅ Pipeline passed security checks!"
+        failure {
+            echo "❌ Pipeline failed due to HIGH/CRITICAL vulnerabilities!"
         }
     }
 }
