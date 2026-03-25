@@ -17,17 +17,15 @@ pipeline {
             }
         }
 
-        stage('Prepare Dependencies') {
+        sstage('Prepare Dependencies') {
     steps {
         echo "Installing dependencies (Node via Docker)..."
         sh '''
-            cd temp_repo || exit 1
-
-            if [ -f package.json ]; then
+            if [ -f temp_repo/package.json ]; then
                 echo "Node project detected"
 
                 docker run --rm \
-                  -v $(pwd):/app \
+                  -v $(pwd)/temp_repo:/app \
                   -w /app \
                   node:18-alpine \
                   npm install --package-lock-only
