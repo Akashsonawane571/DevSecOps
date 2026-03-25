@@ -9,6 +9,7 @@ pipeline {
                     rm -rf temp_repo
                     git clone --depth=1 https://github.com/Akashsonawane571/DevSecOps.git temp_repo
                 '''
+            }
         }
 
         stage('Build') {
@@ -24,4 +25,3 @@ pipeline {
         }
     }
 }
-
