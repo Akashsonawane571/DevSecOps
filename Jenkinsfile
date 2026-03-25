@@ -13,7 +13,7 @@ pipeline {
             }
         }
 
-        stage('Prepare Dependencies') {
+       /* stage('Prepare Dependencies') {
             steps {
                 echo "Installing dependencies (Node via Docker)..."
                 sh '''
@@ -30,7 +30,7 @@ pipeline {
                     fi
                 '''
             }
-        }
+        } */
 
         stage('SBOM Generation (Syft)') {
             steps {
