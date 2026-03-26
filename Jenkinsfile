@@ -13,13 +13,31 @@ pipeline {
             }
         }
 
-        
+        /*stage('Prepare Dependencies') {
+            steps {
+                echo "Installing dependencies (Node via Docker)..."
+                sh '''
+                    if [ -f temp_repo/package.json ]; then
+                        echo "Node project detected"
+
+                        docker run --rm \
+                          -v $(pwd)/temp_repo:/app \
+                          -w /app \
+                          node:18-alpine \
+                          npm install --package-lock-only
+                    else
+                        echo "No package.json found, skipping"
+                    fi
+                '''
+            }
+        } */
+
         stage('SBOM Generation (Syft)') {
             steps {
                 echo "Generating SBOM..."
                 sh '''
                     mkdir -p sca/sbom
-        
+
                     docker run --rm \
                       -v $(pwd):/workspace \
                       anchore/syft:latest dir:/workspace/temp_repo \
@@ -36,8 +54,7 @@ pipeline {
 
                     docker run --rm \
                       -v $(pwd):/workspace \
-                      anchore/grype:latest \
-                      sbom:/workspace/sca/sbom/sbom.json \
+                      anchore/grype:latest sbom:/workspace/sca/sbom/sbom.json \
                       -o json > sca/reports/grype-report.json
                 '''
             }
@@ -68,7 +85,7 @@ pipeline {
                           -e FOSSA_API_KEY=$FOSSA_API_KEY \
                           -v $(pwd)/temp_repo:/workspace \
                           -w /workspace \
-                          fossa/fossa-cli analyze || true
+                          fossa-cli analyze || true
                     '''
                 }
             }
