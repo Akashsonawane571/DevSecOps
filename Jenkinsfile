@@ -7,7 +7,13 @@ pipeline {
             steps {
                 echo 'Cloning the GitHub Repository...'
                 sh """
-                    rm -rf temp_repo
+                    # Fix old permission issue (IMPORTANT)
+                    if [ -d temp_repo ]; then
+                        echo "Fixing ownership..."
+                        chown -R 1000:1000 temp_repo || true
+                        rm -rf temp_repo || true
+                    fi
+
                     git clone --depth=1 https://github.com/Akashsonawane571/DevSecOps.git temp_repo
                 """
             }
