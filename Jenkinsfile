@@ -23,6 +23,8 @@ pipeline {
             steps {
                 echo "Installing dependencies..."
                 sh """
+                    apk add --no-cache git
+                    
                     if [ -f temp_repo/package.json ]; then
                         cd temp_repo
                         npm install
