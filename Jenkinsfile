@@ -17,6 +17,7 @@ pipeline {
             agent {
                 docker {
                     image 'node:18-alpine'
+                    reuseNode true
                 }
             }
             steps {
@@ -27,6 +28,7 @@ pipeline {
                         npm install
                     else
                         echo "No package.json found"
+                        ls -l
                     fi
                 """
             }
@@ -42,6 +44,9 @@ pipeline {
                       -v \$(pwd):/workspace \
                       anchore/syft:latest dir:/workspace/temp_repo \
                       -o json > sca/sbom/sbom.json
+
+                      echo "SBOM created:"
+                      ls -l sca/sbom/
                 """
             }
         }
@@ -51,6 +56,11 @@ pipeline {
                 echo "Running Grype scan..."
                 sh """
                     mkdir -p sca/reports
+
+                    if [ ! -f sca/sbom/sbom.json ]; then
+                        echo "SBOM not found!"
+                        exit 1
+                    fi
 
                     docker run --rm \
                       -v \$(pwd):/workspace \
