@@ -7,15 +7,12 @@ pipeline {
             steps {
                 echo "Cloning repository..."
                 sh '''
-                    rm -rf temp_repo || true
-                    mkdir temp_repo
-                    chmod -R 777 temp_repo
-        
-                    git clone --depth=1 https://github.com/Akashsonawane571/DevSecOps.git temp_repo
+                    git clone --depth=1 \
+                      https://github.com/Akashsonawane571/DevSecOps.git \
+                      temp_repo
                 '''
             }
         }
-
         stage('Prepare Dependencies') {
             agent {
                 docker {
