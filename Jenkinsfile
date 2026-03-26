@@ -25,7 +25,7 @@ pipeline {
         stage('Prepare Dependencies') {
             agent {
                 docker {
-                    image 'node:20-alpine'
+                    image 'node:22-alpine'
                     args '--entrypoint="" -u root'
                     reuseNode true
                 }
@@ -53,16 +53,21 @@ pipeline {
         stage('SBOM Generation (Syft)') {
             steps {
                 echo "Generating SBOM..."
+        
                 sh """
                     mkdir -p sca/sbom
-
+        
+                    echo "Checking node_modules..."
+                    ls -ld temp_repo/node_modules || echo "node_modules not found"
+        
                     docker run --rm \
-                      -v \$(pwd):/workspace \
-                      anchore/syft:latest dir:/workspace/temp_repo \
+                      -v \$WORKSPACE:/workspace \
+                      anchore/syft:latest /workspace/temp_repo \
+                      --catalogers javascript \
                       -o json > sca/sbom/sbom.json
-
-                      echo "SBOM created:"
-                      ls -l sca/sbom/
+        
+                    echo "SBOM created:"
+                    ls -l sca/sbom/
                 """
             }
         }
