@@ -1,15 +1,24 @@
 pipeline {
     agent any
 
+    options {
+        skipDefaultCheckout(true)
+    }
+
     stages {
-        
+
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+
         stage('Clone Repository') {
             steps {
-                echo "Cloning repository..."
                 sh '''
                     git clone --depth=1 \
-                      https://github.com/Akashsonawane571/DevSecOps.git \
-                      temp_repo
+                    https://github.com/Akashsonawane571/DevSecOps.git \
+                    temp_repo
                 '''
             }
         }
