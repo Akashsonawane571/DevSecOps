@@ -13,24 +13,24 @@ pipeline {
             }
         }
 
-        /*stage('Prepare Dependencies') {
+        stage('Prepare Dependencies') {
             steps {
                 echo "Installing dependencies (Node via Docker)..."
                 sh '''
                     if [ -f temp_repo/package.json ]; then
                         echo "Node project detected"
-
+        
                         docker run --rm \
                           -v $(pwd)/temp_repo:/app \
                           -w /app \
                           node:18-alpine \
-                          npm install --package-lock-only
+                          npm install
                     else
                         echo "No package.json found, skipping"
                     fi
                 '''
             }
-        } */
+        }
 
         stage('SBOM Generation (Syft)') {
             steps {
