@@ -17,6 +17,7 @@ pipeline {
             agent {
                 docker {
                     image 'node:18-alpine'
+                    args '--entrypoint="" -u root'
                     reuseNode true
                 }
             }
