@@ -13,19 +13,7 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
-            steps {
-                echo "Installing dependencies..."
-                sh '''
-                    docker run --rm \
-                      -v $(pwd)/temp_repo:/app \
-                      -w /app \
-                      node:18 \
-                      sh -c "npm install"
-                '''
-            }
-        }
-
+        
         stage('SBOM Generation (Syft)') {
             steps {
                 echo "Generating SBOM..."
