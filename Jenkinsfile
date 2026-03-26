@@ -16,7 +16,7 @@ pipeline {
         stage('Prepare Dependencies') {
             agent {
                 docker {
-                    image 'node:18-alpine'
+                    image 'node:20-alpine'
                     args '--entrypoint="" -u root'
                     reuseNode true
                 }
