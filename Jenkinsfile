@@ -17,13 +17,11 @@ pipeline {
             steps {
                 echo "Installing dependencies..."
                 sh '''
-                    cd temp_repo
-
-                    if [ -f package.json ]; then
-                        npm install
-                    else
-                        echo "No package.json found, skipping npm install"
-                    fi
+                    docker run --rm \
+                      -v $(pwd)/temp_repo:/app \
+                      -w /app \
+                      node:18 \
+                      sh -c "npm install"
                 '''
             }
         }
