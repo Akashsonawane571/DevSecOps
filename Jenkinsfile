@@ -13,24 +13,24 @@ pipeline {
             }
         }
 
-            stage('Prepare Dependencies') {
-                agent {
-                    docker {
-                        image 'node:18-alpine'
-                    }
-                }
-                steps {
-                    echo "Installing dependencies..."
-                    sh '''
-                        if [ -f temp_repo/package.json ]; then
-                            cd temp_repo
-                            npm install
-                        else
-                            echo "No package.json found"
-                        fi
-                    '''
+        stage('Prepare Dependencies') {
+            agent {
+                docker {
+                    image 'node:18-alpine'
                 }
             }
+            steps {
+                echo "Installing dependencies..."
+                sh '''
+                    if [ -f temp_repo/package.json ]; then
+                        cd temp_repo
+                        npm install
+                    else
+                        echo "No package.json found"
+                    fi
+                '''
+            }
+        }
 
         stage('SBOM Generation (Syft)') {
             steps {
