@@ -22,16 +22,20 @@ pipeline {
                 }
             }
             steps {
-                echo "Installing dependencies..."
                 sh """
-                    apk add --no-cache git
-                    
+                    echo "Installing build dependencies..."
+        
+                    apk add --no-cache \
+                        git \
+                        python3 \
+                        make \
+                        g++
+        
                     if [ -f temp_repo/package.json ]; then
                         cd temp_repo
                         npm install
                     else
                         echo "No package.json found"
-                        ls -l
                     fi
                 """
             }
