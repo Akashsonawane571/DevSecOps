@@ -2,20 +2,17 @@ pipeline {
     agent any
 
     stages {
-
+        
         stage('Clone Repository') {
             steps {
-                echo 'Cloning the GitHub Repository...'
-                sh """
-                    # Fix old permission issue (IMPORTANT)
-                    if [ -d temp_repo ]; then
-                        echo "Fixing ownership..."
-                        chown -R 1000:1000 temp_repo || true
-                        rm -rf temp_repo || true
-                    fi
-
+                echo "Cloning repository..."
+                sh '''
+                    rm -rf temp_repo || true
+                    mkdir temp_repo
+                    chmod -R 777 temp_repo
+        
                     git clone --depth=1 https://github.com/Akashsonawane571/DevSecOps.git temp_repo
-                """
+                '''
             }
         }
 
