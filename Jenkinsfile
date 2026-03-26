@@ -17,19 +17,18 @@ pipeline {
             steps {
                 echo "Installing dependencies (Node via Docker)..."
                 sh '''
-                    echo "Workspace: $WORKSPACE"
-                    ls -l $WORKSPACE/temp_repo
+                    cd temp_repo
         
-                    if [ -f "$WORKSPACE/temp_repo/package.json" ]; then
+                    if [ -f package.json ]; then
                         echo "Node project detected"
         
                         docker run --rm \
-                          -v $WORKSPACE/temp_repo:/app \
+                          -v $(pwd):/app \
                           -w /app \
                           node:18-alpine \
                           npm install
                     else
-                        echo "No package.json found, skipping"
+                        echo "No package.json found"
                     fi
                 '''
             }
