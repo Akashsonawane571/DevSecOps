@@ -13,24 +13,20 @@ pipeline {
             }
         }
 
-       /* stage('Prepare Dependencies') {
+        stage('Install Dependencies') {
             steps {
-                echo "Installing dependencies (Node via Docker)..."
+                echo "Installing dependencies..."
                 sh '''
-                    if [ -f temp_repo/package.json ]; then
-                        echo "Node project detected"
+                    cd temp_repo
 
-                        docker run --rm \
-                          -v $(pwd)/temp_repo:/app \
-                          -w /app \
-                          node:18-alpine \
-                          npm install --package-lock-only
+                    if [ -f package.json ]; then
+                        npm install
                     else
-                        echo "No package.json found, skipping"
+                        echo "No package.json found, skipping npm install"
                     fi
                 '''
             }
-        } */
+        }
 
         stage('SBOM Generation (Syft)') {
             steps {
@@ -40,8 +36,11 @@ pipeline {
 
                     docker run --rm \
                       -v $(pwd):/workspace \
-                      anchore/syft:latest dir:/workspace/temp_repo \
-                      -o json > sca/sbom/sbom.json
+                      -w /workspace \
+                      anchore/syft:latest /workspace/temp_repo \
+                      -o json \
+                      --scope all-layers \
+                      > sca/sbom/sbom.json
                 '''
             }
         }
@@ -54,7 +53,8 @@ pipeline {
 
                     docker run --rm \
                       -v $(pwd):/workspace \
-                      anchore/grype:latest sbom:/workspace/sca/sbom/sbom.json \
+                      anchore/grype:latest \
+                      sbom:/workspace/sca/sbom/sbom.json \
                       -o json > sca/reports/grype-report.json
                 '''
             }
@@ -85,7 +85,7 @@ pipeline {
                           -e FOSSA_API_KEY=$FOSSA_API_KEY \
                           -v $(pwd)/temp_repo:/workspace \
                           -w /workspace \
-                          fossa-cli analyze || true
+                          fossa/fossa-cli analyze || true
                     '''
                 }
             }
