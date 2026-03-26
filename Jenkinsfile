@@ -19,14 +19,11 @@ pipeline {
                 echo "Generating SBOM..."
                 sh '''
                     mkdir -p sca/sbom
-
+        
                     docker run --rm \
                       -v $(pwd):/workspace \
-                      -w /workspace \
-                      anchore/syft:latest /workspace/temp_repo \
-                      -o json \
-                      --scope all-layers \
-                      > sca/sbom/sbom.json
+                      anchore/syft:latest dir:/workspace/temp_repo \
+                      -o json > sca/sbom/sbom.json
                 '''
             }
         }
