@@ -106,7 +106,6 @@ pipeline {
         
                 mkdir -p sca/reports
         
-                # Check SBOM exists
                 if [ ! -f "$SBOM" ]; then
                   echo "❌ SBOM not found!"
                   exit 1
@@ -115,29 +114,23 @@ pipeline {
                 echo "[" > $OUTPUT
                 FIRST=1
         
-                jq '.artifacts[].type' sca/sbom/sbom.json | sort | uniq
+                jq -c '.artifacts[]' $SBOM | while read pkg; do
         
                   NAME=$(echo $pkg | jq -r '.name')
                   VERSION=$(echo $pkg | jq -r '.version')
                   TYPE=$(echo $pkg | jq -r '.type')
         
-                  # Ecosystem mapping
-                  if [ "$TYPE" = "npm" ]; then
-                    ECOSYSTEM="npm"
-                  elif [ "$TYPE" = "python" ]; then
-                    ECOSYSTEM="PyPI"
-                  elif [ "$TYPE" = "java" ]; then
-                    ECOSYSTEM="Maven"
-                  else
+                  # Only scan npm packages
+                  if [ "$TYPE" != "npm" ]; then
                     continue
                   fi
         
-                  echo "Scanning $NAME@$VERSION ($ECOSYSTEM)"
+                  echo "Scanning $NAME@$VERSION"
         
                   RESP=$(curl -s --max-time 10 https://api.osv.dev/v1/query -d "{
                     \\"package\\": {
                       \\"name\\": \\"$NAME\\",
-                      \\"ecosystem\\": \\"$ECOSYSTEM\\"
+                      \\"ecosystem\\": \\"npm\\"
                     },
                     \\"version\\": \\"$VERSION\\"
                   }")
@@ -156,10 +149,7 @@ pipeline {
                 echo "]" >> $OUTPUT
         
                 echo "✅ OSV scan completed"
-        
-                # Debug
                 ls -l sca/reports/
-                head -n 20 sca/reports/osv-report.json
                 '''
             }
         }
