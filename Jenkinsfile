@@ -44,7 +44,7 @@ pipeline {
                   -v $(pwd):/workspace \
                   anchore/syft:latest dir:/workspace/temp_repo \
                   -o json \
-                  -f /workspace/sca/sbom/sbom.json
+                  --file /workspace/sca/sbom/sbom.json
         
                 echo "Verifying SBOM location..."
                 pwd
