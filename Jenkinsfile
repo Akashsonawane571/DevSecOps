@@ -24,6 +24,14 @@ pipeline {
                 '''
             }
         }
+        stage('Verify Repo Structure') {
+            steps {
+                sh '''
+                echo "Repo structure:"
+                ls -R temp_repo | head -n 50
+                '''
+            }
+        }
 
         stage('Prepare SCA Directories') {
             steps {
