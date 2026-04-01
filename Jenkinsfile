@@ -46,7 +46,7 @@ pipeline {
                 echo "Installing dependencies (no build)..."
         
                 cd temp_repo
-                npm --ignore-scripts
+                npm install --ignore-scripts
                 '''
             }
         }
