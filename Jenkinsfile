@@ -33,7 +33,7 @@ pipeline {
             }
         }
 
-        stage('SBOM Generation (Syft)') {
+        /*stage('SBOM Generation (Syft)') {
             steps {
                 sh '''
                 echo "Generating SBOM using Syft..."
@@ -44,21 +44,20 @@ pipeline {
                   -o json > sca/sbom/sbom.json
                 '''
             }
-        }
+        }*/
         stage('Vulnerability Scan (Grype)') {
             steps {
                 sh '''
                 echo "Running Grype scan..."
-
+        
                 docker run --rm \
-                  -u root \
                   -v $(pwd):/workspace \
                   anchore/grype:latest sbom:/workspace/sca/sbom/sbom.json \
-                  -o json > sca/reports/grype-report.json
+                  -o json \
+                  -f /workspace/sca/reports/grype-report.json
                 '''
             }
         }
-
         stage('Vulnerability Scan (Trivy)') {
             steps {
                 sh '''
