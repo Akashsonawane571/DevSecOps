@@ -53,8 +53,7 @@ pipeline {
                 docker run --rm \
                   -v $(pwd):/workspace \
                   anchore/grype:latest sbom:/workspace/sca/sbom/sbom.json \
-                  -o json \
-                  -f /workspace/sca/reports/grype-report.json
+                  -o json > sca/reports/grype-report.json
                 '''
             }
         }
