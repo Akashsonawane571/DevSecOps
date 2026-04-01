@@ -152,16 +152,8 @@ EOF
     post {
         always {
             echo "Archiving reports..."
-
-            archiveArtifacts artifacts: 'sca/reports/*.json', fingerprint: true
-        }
-
-        success {
-            echo "✅ Pipeline Passed - No critical vulnerabilities"
-        }
-
-        failure {
-            echo "❌ Pipeline Failed - Security issues detected"
+    
+            archiveArtifacts artifacts: 'sca/**/*.json', fingerprint: true
         }
     }
 }
