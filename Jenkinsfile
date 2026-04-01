@@ -63,7 +63,7 @@ pipeline {
                   -o json > sca/reports/grype-report.json
                 '''
             }
-        }*/
+        }
         stage('Vulnerability Scan (Trivy)') {
             steps {
                 sh '''
@@ -79,7 +79,7 @@ pipeline {
                 ls -l sca/reports/
                 '''
             }
-        }
+        } */
 
         stage('OSV Risk Enrichment') {
             steps {
@@ -95,7 +95,7 @@ echo "[" > $OUTPUT
 
 FIRST=1
 
-jq -c '.artifacts[]' $SBOM | while read pkg; do
+jq -c '.artifacts[]? // empty' $SBOM | while read pkg; do
   NAME=$(echo $pkg | jq -r '.name')
   VERSION=$(echo $pkg | jq -r '.version')
 
