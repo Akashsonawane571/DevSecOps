@@ -37,16 +37,14 @@ pipeline {
             steps {
                 sh '''
                 echo "Generating SBOM using Syft..."
-
+        
                 docker run --rm \
-                  -u root \
                   -v $(pwd):/workspace \
                   anchore/syft:latest /workspace/temp_repo \
                   -o json > sca/sbom/sbom.json
                 '''
             }
         }
-
         stage('Vulnerability Scan (Grype)') {
             steps {
                 sh '''
