@@ -60,11 +60,9 @@ pipeline {
                 docker run --rm \
                   -v $(pwd):/workspace \
                   anchore/syft:latest dir:/workspace/temp_repo \
-                  -o json \
-                  --file /workspace/sca/sbom/sbom.json
+                  --output json=/workspace/sca/sbom/sbom.json
         
-                echo "Verifying SBOM location..."
-                pwd
+                echo "Verifying SBOM..."
                 ls -l sca/sbom/
                 '''
             }
@@ -117,7 +115,7 @@ pipeline {
                 echo "[" > $OUTPUT
                 FIRST=1
         
-                jq -c '.artifacts[]? // empty' $SBOM | while read pkg; do
+                jq '.artifacts[].type' sca/sbom/sbom.json | sort | uniq
         
                   NAME=$(echo $pkg | jq -r '.name')
                   VERSION=$(echo $pkg | jq -r '.version')
