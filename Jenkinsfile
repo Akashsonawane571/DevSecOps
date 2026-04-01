@@ -81,42 +81,90 @@ pipeline {
             }
         } */
 
-        stage('OSV Risk Enrichment') {
+                stage('OSV Risk Enrichment') {
             steps {
                 sh '''
                 echo "Running OSV enrichment..."
-
+        
+                # Ensure directories exist
+                mkdir -p sca/reports
+        
+                # Create script
                 cat << 'EOF' > osv_scan.sh
-#!/bin/bash
-SBOM="sca/sbom/sbom.json"
-OUTPUT="sca/reports/osv-report.json"
-
-echo "[" > $OUTPUT
-
-FIRST=1
-
-jq -c '.artifacts[]? // empty' $SBOM | while read pkg; do
-  NAME=$(echo $pkg | jq -r '.name')
-  VERSION=$(echo $pkg | jq -r '.version')
-
-  RESP=$(curl -s https://api.osv.dev/v1/query -d "{
-    \\"package\\": {\\"name\\": \\"$NAME\\"},
-    \\"version\\": \\"$VERSION\\"
-  }")
-
-  if [ $FIRST -eq 0 ]; then
-    echo "," >> $OUTPUT
-  fi
-
-  echo $RESP >> $OUTPUT
-  FIRST=0
-done
-
-echo "]" >> $OUTPUT
-EOF
-
+        #!/bin/bash
+        
+        SBOM="sca/sbom/sbom.json"
+        OUTPUT="sca/reports/osv-report.json"
+        
+        echo "Starting OSV scan..."
+        
+        # Check if SBOM exists
+        if [ ! -f "$SBOM" ]; then
+          echo "❌ SBOM file not found!"
+          exit 1
+        fi
+        
+        echo "[" > $OUTPUT
+        FIRST=1
+        
+        # Loop through SBOM packages safely
+        jq -c '.artifacts[]? // empty' $SBOM | while read pkg; do
+        
+          NAME=$(echo $pkg | jq -r '.name')
+          VERSION=$(echo $pkg | jq -r '.version')
+          TYPE=$(echo $pkg | jq -r '.type')
+        
+          # Map ecosystem (IMPORTANT)
+          if [ "$TYPE" = "npm" ]; then
+            ECOSYSTEM="npm"
+          elif [ "$TYPE" = "python" ]; then
+            ECOSYSTEM="PyPI"
+          elif [ "$TYPE" = "java" ]; then
+            ECOSYSTEM="Maven"
+          else
+            continue
+          fi
+        
+          echo "🔍 Scanning $NAME@$VERSION ($ECOSYSTEM)"
+        
+          RESP=$(curl -s --max-time 10 https://api.osv.dev/v1/query -d "{
+            \\"package\\": {
+              \\"name\\": \\"$NAME\\",
+              \\"ecosystem\\": \\"$ECOSYSTEM\\"
+            },
+            \\"version\\": \\"$VERSION\\"
+          }")
+        
+          # Skip empty responses
+          if [ "$RESP" != "{}" ]; then
+            if [ $FIRST -eq 0 ]; then
+              echo "," >> $OUTPUT
+            fi
+        
+            echo $RESP >> $OUTPUT
+            FIRST=0
+          fi
+        
+        done
+        
+        echo "]" >> $OUTPUT
+        
+        echo "✅ OSV scan completed"
+        EOF
+        
                 chmod +x osv_scan.sh
+        
+                # Debug before execution
+                echo "Checking SBOM before OSV..."
+                ls -l sca/sbom/
+        
+                # Run OSV script
                 ./osv_scan.sh
+        
+                # Verify output
+                echo "Checking OSV report..."
+                ls -l sca/reports/
+                head -n 20 sca/reports/osv-report.json
                 '''
             }
         }
