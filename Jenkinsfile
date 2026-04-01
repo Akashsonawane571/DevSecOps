@@ -33,7 +33,7 @@ pipeline {
             }
         }
 
-        /*stage('SBOM Generation (Syft)') {
+        stage('SBOM Generation (Syft)') {
             steps {
                 sh '''
                 echo "Generating SBOM using Syft..."
@@ -52,7 +52,7 @@ pipeline {
                 '''
             }
         }
-        stage('Vulnerability Scan (Grype)') {
+        /*stage('Vulnerability Scan (Grype)') {
             steps {
                 sh '''
                 echo "Running Grype scan..."
