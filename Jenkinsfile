@@ -40,6 +40,16 @@ pipeline {
                 '''
             }
         }
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                echo "Installing Node.js dependencies..."
+        
+                cd temp_repo
+                npm install --omit=dev
+                '''
+            }
+        }
 
         stage('SBOM Generation (Syft)') {
             steps {
