@@ -81,88 +81,68 @@ pipeline {
             }
         } */
 
-                stage('OSV Risk Enrichment') {
+        stage('OSV Risk Enrichment') {
             steps {
                 sh '''
                 echo "Running OSV enrichment..."
         
-                # Ensure directories exist
+                SBOM="sca/sbom/sbom.json"
+                OUTPUT="sca/reports/osv-report.json"
+        
                 mkdir -p sca/reports
         
-                # Create script
-                cat << 'EOF' > osv_scan.sh
-        #!/bin/bash
+                # Check SBOM exists
+                if [ ! -f "$SBOM" ]; then
+                  echo "❌ SBOM not found!"
+                  exit 1
+                fi
         
-        SBOM="sca/sbom/sbom.json"
-        OUTPUT="sca/reports/osv-report.json"
+                echo "[" > $OUTPUT
+                FIRST=1
         
-        echo "Starting OSV scan..."
+                jq -c '.artifacts[]? // empty' $SBOM | while read pkg; do
         
-        # Check if SBOM exists
-        if [ ! -f "$SBOM" ]; then
-          echo "❌ SBOM file not found!"
-          exit 1
-        fi
+                  NAME=$(echo $pkg | jq -r '.name')
+                  VERSION=$(echo $pkg | jq -r '.version')
+                  TYPE=$(echo $pkg | jq -r '.type')
         
-        echo "[" > $OUTPUT
-        FIRST=1
+                  # Ecosystem mapping
+                  if [ "$TYPE" = "npm" ]; then
+                    ECOSYSTEM="npm"
+                  elif [ "$TYPE" = "python" ]; then
+                    ECOSYSTEM="PyPI"
+                  elif [ "$TYPE" = "java" ]; then
+                    ECOSYSTEM="Maven"
+                  else
+                    continue
+                  fi
         
-        # Loop through SBOM packages safely
-        jq -c '.artifacts[]? // empty' $SBOM | while read pkg; do
+                  echo "Scanning $NAME@$VERSION ($ECOSYSTEM)"
         
-          NAME=$(echo $pkg | jq -r '.name')
-          VERSION=$(echo $pkg | jq -r '.version')
-          TYPE=$(echo $pkg | jq -r '.type')
+                  RESP=$(curl -s --max-time 10 https://api.osv.dev/v1/query -d "{
+                    \\"package\\": {
+                      \\"name\\": \\"$NAME\\",
+                      \\"ecosystem\\": \\"$ECOSYSTEM\\"
+                    },
+                    \\"version\\": \\"$VERSION\\"
+                  }")
         
-          # Map ecosystem (IMPORTANT)
-          if [ "$TYPE" = "npm" ]; then
-            ECOSYSTEM="npm"
-          elif [ "$TYPE" = "python" ]; then
-            ECOSYSTEM="PyPI"
-          elif [ "$TYPE" = "java" ]; then
-            ECOSYSTEM="Maven"
-          else
-            continue
-          fi
+                  if [ "$RESP" != "{}" ]; then
+                    if [ $FIRST -eq 0 ]; then
+                      echo "," >> $OUTPUT
+                    fi
         
-          echo "🔍 Scanning $NAME@$VERSION ($ECOSYSTEM)"
+                    echo $RESP >> $OUTPUT
+                    FIRST=0
+                  fi
         
-          RESP=$(curl -s --max-time 10 https://api.osv.dev/v1/query -d "{
-            \\"package\\": {
-              \\"name\\": \\"$NAME\\",
-              \\"ecosystem\\": \\"$ECOSYSTEM\\"
-            },
-            \\"version\\": \\"$VERSION\\"
-          }")
+                done
         
-          # Skip empty responses
-          if [ "$RESP" != "{}" ]; then
-            if [ $FIRST -eq 0 ]; then
-              echo "," >> $OUTPUT
-            fi
+                echo "]" >> $OUTPUT
         
-            echo $RESP >> $OUTPUT
-            FIRST=0
-          fi
+                echo "✅ OSV scan completed"
         
-        done
-        
-        echo "]" >> $OUTPUT
-        
-        echo "✅ OSV scan completed"
-        EOF
-        
-                chmod +x osv_scan.sh
-        
-                # Debug before execution
-                echo "Checking SBOM before OSV..."
-                ls -l sca/sbom/
-        
-                # Run OSV script
-                ./osv_scan.sh
-        
-                # Verify output
-                echo "Checking OSV report..."
+                # Debug
                 ls -l sca/reports/
                 head -n 20 sca/reports/osv-report.json
                 '''
