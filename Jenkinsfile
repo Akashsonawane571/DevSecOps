@@ -1,155 +1,169 @@
 pipeline {
     agent any
 
-    options {
-        skipDefaultCheckout(true)
+    environment {
+        WORKSPACE_DIR = "${WORKSPACE}"
+        SCA_DIR = "${WORKSPACE}/sca"
+        FOSSA_API_KEY = credentials('fossa-api-key')  // store in Jenkins credentials
     }
 
     stages {
 
-        // ✅ FIX 1: Proper checkout (no git error)
-        stage('Checkout Code') {
+        stage('Clean Workspace') {
             steps {
-                echo "Checking out source code..."
-                checkout scm
+                echo "Cleaning workspace..."
+                deleteDir()
             }
         }
 
-        // ✅ FIX 2: Clean only unnecessary folders (NOT .git)
-        stage('Clean Old Data') {
-            steps {
-                sh '''
-                    rm -rf sca || true
-                    rm -rf temp_repo || true
-                '''
-            }
-        }
-
-        // ✅ FIX 3: Clone fresh repo
         stage('Clone Repository') {
             steps {
+                echo "Cloning repository..."
                 sh '''
-                    git clone --depth=1 \
-                    https://github.com/Akashsonawane571/DevSecOps.git \
-                    temp_repo
+                git clone --depth=1 https://github.com/Akashsonawane571/DevSecOps.git temp_repo
                 '''
             }
         }
 
-        // ✅ FIX 4: Install dependencies (NO docker.sock issue)
-        // 👉 Using system Node OR Docker fallback
-        stage('Prepare Dependencies') {
+        stage('Prepare SCA Directories') {
             steps {
                 sh '''
-                    echo "Installing dependencies..."
-
-                    # Ensure correct permissions
-                    chmod -R 777 temp_repo
-
-                    if [ -f temp_repo/package.json ]; then
-                        cd temp_repo
-
-                        # Install dependencies (skip build errors)
-                        npm install || true
-                    else
-                        echo "No package.json found"
-                    fi
+                mkdir -p sca/sbom sca/reports sca/logs
                 '''
             }
         }
 
-        // ✅ FIX 5: SBOM generation (correct path + file check)
         stage('SBOM Generation (Syft)') {
             steps {
                 sh '''
-                    echo "Generating SBOM..."
+                echo "Generating SBOM using Syft..."
 
-                    mkdir -p sca/sbom
-
-                    docker run --rm \
-                      -v $WORKSPACE:/workspace \
-                      anchore/syft:latest /workspace/temp_repo \
-                      --catalogers javascript \
-                      -o json > sca/sbom/sbom.json
-
-                    echo "SBOM created:"
-                    ls -l sca/sbom/
-
-                    # Validate file
-                    if [ ! -s sca/sbom/sbom.json ]; then
-                        echo "SBOM generation failed!"
-                        exit 1
-                    fi
+                docker run --rm \
+                  -u root \
+                  -v $(pwd):/workspace \
+                  anchore/syft:latest /workspace/temp_repo \
+                  -o json > sca/sbom/sbom.json
                 '''
             }
         }
 
-        // ✅ FIX 6: Grype scan (safe execution)
         stage('Vulnerability Scan (Grype)') {
             steps {
                 sh '''
-                    echo "Running Grype scan..."
+                echo "Running Grype scan..."
 
-                    mkdir -p sca/reports
-
-                    docker run --rm \
-                      -v $WORKSPACE:/workspace \
-                      anchore/grype:latest sbom:/workspace/sca/sbom/sbom.json \
-                      -o json > sca/reports/grype-report.json
-
-                    echo "Grype report generated"
+                docker run --rm \
+                  -u root \
+                  -v $(pwd):/workspace \
+                  anchore/grype:latest sbom:/workspace/sca/sbom/sbom.json \
+                  -o json > sca/reports/grype-report.json
                 '''
             }
         }
 
-        // ✅ FIX 7: Trivy gate
-        stage('Trivy Scan (CI/CD Gate)') {
+        stage('Vulnerability Scan (Trivy)') {
             steps {
                 sh '''
-                    echo "Running Trivy scan..."
+                echo "Running Trivy scan..."
 
-                    docker run --rm \
-                      -v $WORKSPACE:/workspace \
-                      -v trivy-cache:/root/.cache/ \
-                      aquasec/trivy:0.49.1 fs /workspace/temp_repo \
-                      --scanners vuln \
-                      --severity HIGH,CRITICAL \
-                      --exit-code 1 || true
+                docker run --rm \
+                  -u root \
+                  -v $(pwd):/workspace \
+                  aquasec/trivy:latest fs /workspace/temp_repo \
+                  --format json \
+                  -o /workspace/sca/reports/trivy-report.json
                 '''
             }
         }
 
-        // ✅ FIX 8: FOSSA (optional, non-blocking)
-        stage('FOSSA Scan (Policy & License)') {
+        stage('OSV Risk Enrichment') {
             steps {
-                withCredentials([string(credentialsId: 'fossa-api-key', variable: 'FOSSA_API_KEY')]) {
-                    sh '''
-                        echo "Running FOSSA scan..."
+                sh '''
+                echo "Running OSV enrichment..."
 
-                        docker run --rm \
-                          -e FOSSA_API_KEY=$FOSSA_API_KEY \
-                          -v $WORKSPACE/temp_repo:/workspace \
-                          -w /workspace \
-                          fossa-cli analyze || true
-                    '''
-                }
+                cat << 'EOF' > osv_scan.sh
+#!/bin/bash
+SBOM="sca/sbom/sbom.json"
+OUTPUT="sca/reports/osv-report.json"
+
+echo "[" > $OUTPUT
+
+FIRST=1
+
+jq -c '.artifacts[]' $SBOM | while read pkg; do
+  NAME=$(echo $pkg | jq -r '.name')
+  VERSION=$(echo $pkg | jq -r '.version')
+
+  RESP=$(curl -s https://api.osv.dev/v1/query -d "{
+    \\"package\\": {\\"name\\": \\"$NAME\\"},
+    \\"version\\": \\"$VERSION\\"
+  }")
+
+  if [ $FIRST -eq 0 ]; then
+    echo "," >> $OUTPUT
+  fi
+
+  echo $RESP >> $OUTPUT
+  FIRST=0
+done
+
+echo "]" >> $OUTPUT
+EOF
+
+                chmod +x osv_scan.sh
+                ./osv_scan.sh
+                '''
+            }
+        }
+
+        stage('Policy Enforcement (FOSSA)') {
+            steps {
+                sh '''
+                echo "Running FOSSA analysis..."
+
+                docker run --rm \
+                  -u root \
+                  -e FOSSA_API_KEY=$FOSSA_API_KEY \
+                  -v $(pwd):/workspace \
+                  alpine:latest sh -c "
+                    apk add --no-cache curl bash git &&
+                    curl -s https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | bash &&
+                    cd /workspace/temp_repo &&
+                    fossa analyze
+                  "
+                '''
+            }
+        }
+
+        stage('CI/CD Gate (Trivy Fail on High/Critical)') {
+            steps {
+                sh '''
+                echo "Applying CI/CD security gate..."
+
+                docker run --rm \
+                  -u root \
+                  -v $(pwd):/workspace \
+                  aquasec/trivy:latest fs /workspace/temp_repo \
+                  --exit-code 1 \
+                  --severity HIGH,CRITICAL
+                '''
             }
         }
     }
 
-    // ✅ FIX 9: Proper reporting
     post {
         always {
             echo "Archiving reports..."
-            archiveArtifacts artifacts: 'sca/**/*.json', fingerprint: true
+
+            archiveArtifacts artifacts: 'sca/reports/*.json', fingerprint: true
         }
 
         success {
-            echo "✅ Pipeline passed all security checks!"
+            echo "✅ Pipeline Passed - No critical vulnerabilities"
         }
 
         failure {
-            echo "❌ Pipeline failed due to vulnerabilities or errors!"
+            echo "❌ Pipeline Failed - Security issues detected"
         }
     }
 }
