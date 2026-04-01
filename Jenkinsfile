@@ -43,14 +43,13 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
-                echo "Installing Node.js dependencies..."
+                echo "Installing dependencies (no build)..."
         
                 cd temp_repo
-                npm install --omit=dev
+                npm ci --ignore-scripts
                 '''
             }
         }
-
         stage('SBOM Generation (Syft)') {
             steps {
                 sh '''
