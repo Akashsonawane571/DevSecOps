@@ -116,40 +116,38 @@ pipeline {
                 echo "[" > $OUTPUT
                 FIRST=1
         
-                jq -c '.artifacts[]' $SBOM | while read pkg; do
-
-                  NAME=$(printf '%s' "$pkg" | jq -r '.name')
-                  VERSION=$(printf '%s' "$pkg" | jq -r '.version')
-                  TYPE=$(printf '%s' "$pkg" | jq -r '.type')
-                
-                  if [ "$TYPE" != "npm" ]; then
-                    continue
-                  fi
-                
+                # Extract clean fields directly using jq (NO JSON break)
+                jq -r '.artifacts[] | select(.type=="npm") | "\\(.name) \\(.version)"' $SBOM | while read NAME VERSION; do
+        
                   echo "Scanning $NAME@$VERSION"
-                
-                  RESP=$(curl -s https://api.osv.dev/v1/query -d "{
+        
+                  RESP=$(curl -s --max-time 10 https://api.osv.dev/v1/query -d "{
                     \\"package\\": {
                       \\"name\\": \\"$NAME\\",
                       \\"ecosystem\\": \\"npm\\"
                     },
                     \\"version\\": \\"$VERSION\\"
                   }")
-                
+        
                   if [ "$RESP" != "{}" ]; then
-                    echo "$RESP"
+                    if [ $FIRST -eq 0 ]; then
+                      echo "," >> $OUTPUT
+                    fi
+        
+                    echo "$RESP" >> $OUTPUT
+                    FIRST=0
                   fi
-                
+        
                 done
         
                 echo "]" >> $OUTPUT
         
                 echo "✅ OSV scan completed"
                 ls -l sca/reports/
+                head -n 20 sca/reports/osv-report.json
                 '''
             }
         }
-
         stage('Policy Enforcement (FOSSA)') {
             steps {
                 sh '''
