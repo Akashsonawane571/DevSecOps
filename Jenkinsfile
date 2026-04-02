@@ -40,7 +40,7 @@ pipeline {
                 '''
             }
         }
-        stage('Install Dependencies') {
+        /*stage('Install Dependencies') {
             steps {
                 sh '''
                 echo "Installing dependencies with cache..."
@@ -68,7 +68,7 @@ pipeline {
                 jq '.artifacts[].type' sca/sbom/sbom.json | sort | uniq
                 '''
             }
-        }
+        }*/
         /*stage('Vulnerability Scan (Grype)') {
             steps {
                 sh '''
@@ -96,7 +96,7 @@ pipeline {
                 ls -l sca/reports/
                 '''
             }
-        } */
+        } 
 
         stage('OSV Risk Enrichment') {
             steps {
@@ -147,21 +147,21 @@ pipeline {
                 head -n 20 sca/reports/osv-report.json
                 '''
             }
-        }
+        }*/
         stage('Policy Enforcement (FOSSA)') {
             steps {
                 sh '''
                 echo "Running FOSSA analysis..."
-
+        
                 docker run --rm \
-                  -u root \
                   -e FOSSA_API_KEY=$FOSSA_API_KEY \
                   -v $(pwd):/workspace \
                   alpine:latest sh -c "
-                    apk add --no-cache curl bash git &&
-                    curl -s https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | bash &&
+                    apk add --no-cache curl bash git nodejs npm &&
+                    curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install-latest.sh | bash &&
                     cd /workspace/temp_repo &&
-                    fossa analyze
+                    ls -l package.json &&
+                    fossa analyze --detect
                   "
                 '''
             }
