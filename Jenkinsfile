@@ -153,6 +153,8 @@ pipeline {
                 sh '''
                 echo "Running FOSSA analysis..."
         
+                mkdir -p sca/reports
+        
                 docker run --rm \
                   -e FOSSA_API_KEY=$FOSSA_API_KEY \
                   -v $(pwd):/workspace \
@@ -160,9 +162,12 @@ pipeline {
                     apk add --no-cache curl bash git nodejs npm &&
                     curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install-latest.sh | bash &&
                     cd /workspace/temp_repo &&
-                    ls -l package.json &&
-                    fossa analyze --detect
+                    fossa analyze --output --json > /workspace/sca/reports/fossa-report.json
                   "
+        
+                echo "Checking FOSSA report..."
+                ls -l sca/reports/
+                head -n 20 sca/reports/fossa-report.json
                 '''
             }
         }
