@@ -40,7 +40,7 @@ pipeline {
                 '''
             }
         }
-        /*stage('Install Dependencies') {
+        stage('Install Dependencies') {
             steps {
                 sh '''
                 echo "Installing dependencies with cache..."
@@ -68,8 +68,8 @@ pipeline {
                 jq '.artifacts[].type' sca/sbom/sbom.json | sort | uniq
                 '''
             }
-        }*/
-        /*stage('Vulnerability Scan (Grype)') {
+        }
+        stage('Vulnerability Scan (Grype)') {
             steps {
                 sh '''
                 echo "Running Grype scan..."
@@ -109,7 +109,7 @@ pipeline {
                 mkdir -p sca/reports
         
                 if [ ! -f "$SBOM" ]; then
-                  echo "❌ SBOM not found!"
+                  echo "SBOM not found!"
                   exit 1
                 fi
         
@@ -142,7 +142,7 @@ pipeline {
         
                 echo "]" >> $OUTPUT
         
-                echo "✅ OSV scan completed"
+                echo "OSV scan completed"
                 ls -l sca/reports/
                 head -n 20 sca/reports/osv-report.json
                 '''
@@ -179,7 +179,7 @@ pipeline {
                 head -n 20 sca/reports/fossa-report.json
                 '''
             }
-        }*/
+        }
 
         stage('CI/CD Gate (Trivy + Report)') {
             steps {
