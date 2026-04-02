@@ -185,11 +185,10 @@ pipeline {
             steps {
                 sh '''
                 echo "Applying CI/CD security gate..."
-
+        
                 docker run --rm \
-                  -u root \
                   -v $(pwd):/workspace \
-                  aquasec/trivy:latest fs /workspace/temp_repo \
+                  aquasec/trivy:0.49.1 fs /workspace/temp_repo \
                   --exit-code 1 \
                   --severity HIGH,CRITICAL
                 '''
