@@ -118,29 +118,29 @@ pipeline {
         
                 jq -c '.artifacts[]' $SBOM | while read pkg; do
 
-              NAME=$(printf '%s' "$pkg" | jq -r '.name')
-              VERSION=$(printf '%s' "$pkg" | jq -r '.version')
-              TYPE=$(printf '%s' "$pkg" | jq -r '.type')
-            
-              if [ "$TYPE" != "npm" ]; then
-                continue
-              fi
-            
-              echo "Scanning $NAME@$VERSION"
-            
-              RESP=$(curl -s https://api.osv.dev/v1/query -d "{
-                \\"package\\": {
-                  \\"name\\": \\"$NAME\\",
-                  \\"ecosystem\\": \\"npm\\"
-                },
-                \\"version\\": \\"$VERSION\\"
-              }")
-            
-              if [ "$RESP" != "{}" ]; then
-                echo "$RESP"
-              fi
-            
-            done
+                  NAME=$(printf '%s' "$pkg" | jq -r '.name')
+                  VERSION=$(printf '%s' "$pkg" | jq -r '.version')
+                  TYPE=$(printf '%s' "$pkg" | jq -r '.type')
+                
+                  if [ "$TYPE" != "npm" ]; then
+                    continue
+                  fi
+                
+                  echo "Scanning $NAME@$VERSION"
+                
+                  RESP=$(curl -s https://api.osv.dev/v1/query -d "{
+                    \\"package\\": {
+                      \\"name\\": \\"$NAME\\",
+                      \\"ecosystem\\": \\"npm\\"
+                    },
+                    \\"version\\": \\"$VERSION\\"
+                  }")
+                
+                  if [ "$RESP" != "{}" ]; then
+                    echo "$RESP"
+                  fi
+                
+                done
         
                 echo "]" >> $OUTPUT
         
