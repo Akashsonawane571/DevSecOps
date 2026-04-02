@@ -90,7 +90,7 @@ pipeline {
                   -v $(pwd):/workspace \
                   aquasec/trivy:0.49.1 fs /workspace/temp_repo \
                   --format json \
-                  -o /workspace/sca/reports/trivy-report.json
+                  -o /workspace/sca/reports/trivy-vulnerability-report.json
         
                 echo "Verifying Trivy report..."
                 ls -l sca/reports/
