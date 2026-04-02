@@ -181,11 +181,25 @@ pipeline {
             }
         }*/
 
-        stage('CI/CD Gate (Trivy Fail on High/Critical)') {
+        stage('CI/CD Gate (Trivy + Report)') {
             steps {
                 sh '''
-                echo "Applying CI/CD security gate..."
+                echo "Running Trivy scan and generating report..."
         
+                mkdir -p sca/reports
+        
+                # STEP 1: Generate report (no fail)
+                docker run --rm \
+                  -v $(pwd):/workspace \
+                  aquasec/trivy:0.49.1 fs /workspace/temp_repo \
+                  --severity HIGH,CRITICAL \
+                  --format json \
+                  -o /workspace/sca/reports/trivy-report.json
+        
+                echo "Trivy report generated:"
+                ls -l sca/reports/
+        
+                # STEP 2: Apply security gate (fail build)
                 docker run --rm \
                   -v $(pwd):/workspace \
                   aquasec/trivy:0.49.1 fs /workspace/temp_repo \
