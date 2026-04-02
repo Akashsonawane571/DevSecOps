@@ -59,11 +59,11 @@ pipeline {
         
                 docker run --rm \
                   -v $(pwd):/workspace \
-                  anchore/syft:latest dir:/workspace/temp_repo \
+                  anchore/syft:latest dir:/workspace/temp_repo/node_modules \
                   --output json=/workspace/sca/sbom/sbom.json
         
-                echo "Verifying SBOM..."
-                ls -l sca/sbom/
+                echo "Verify SBOM:"
+                jq '.artifacts[].type' sca/sbom/sbom.json | sort | uniq
                 '''
             }
         }
