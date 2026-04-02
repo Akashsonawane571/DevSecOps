@@ -25,6 +25,7 @@ pipeline {
                 '''
             }
         }
+
         stage('Verify Repo Structure') {
             steps {
                 sh '''
@@ -41,6 +42,7 @@ pipeline {
                 '''
             }
         }
+
         stage('Install Dependencies') {
             steps {
                 sh '''
@@ -53,6 +55,7 @@ pipeline {
                 '''
             }
         }
+
         stage('SBOM Generation (Syft)') {
             steps {
                 sh '''
@@ -70,6 +73,7 @@ pipeline {
                 '''
             }
         }
+
         stage('Vulnerability Scan (Grype)') {
             steps {
                 sh '''
@@ -82,6 +86,7 @@ pipeline {
                 '''
             }
         }
+
         stage('Vulnerability Scan (Trivy)') {
             steps {
                 sh '''
@@ -117,7 +122,6 @@ pipeline {
                 echo "[" > $OUTPUT
                 FIRST=1
         
-                # Extract clean fields directly using jq (NO JSON break)
                 jq -r '.artifacts[] | select(.type=="npm") | "\\(.name) \\(.version)"' $SBOM | while read NAME VERSION; do
         
                   echo "Scanning $NAME@$VERSION"
@@ -149,6 +153,7 @@ pipeline {
                 '''
             }
         }
+
         stage('Policy Enforcement (FOSSA)') {
             steps {
                 sh '''
@@ -189,7 +194,6 @@ pipeline {
         
                 mkdir -p sca/reports
         
-                # STEP 1: Generate report (no fail)
                 docker run --rm \
                   -v $(pwd):/workspace \
                   aquasec/trivy:0.49.1 fs /workspace/temp_repo \
@@ -200,7 +204,6 @@ pipeline {
                 echo "Trivy report generated:"
                 ls -l sca/reports/
         
-                # STEP 2: Apply security gate (fail build)
                 docker run --rm \
                   -v $(pwd):/workspace \
                   aquasec/trivy:0.49.1 fs /workspace/temp_repo \
@@ -209,31 +212,35 @@ pipeline {
                 '''
             }
         }
-    }
-    stage('AI Security Analysis') {
-        steps {
-            sh '''
-            echo "Running AI analysis..."
-            
-            pip3 install requests
-            
-            python3 ai/ai_analysis.py
-            '''
+
+        stage('AI Security Analysis') {
+            steps {
+                sh '''
+                echo "Running AI analysis..."
+                
+                pip3 install requests
+                
+                python3 ai/ai_analysis.py
+                '''
+            }
         }
-    }
-    stage('Generate PDF Report') {
-        steps {
-            sh '''
-            echo "Generating PDF..."
+
+        stage('Generate PDF Report') {
+            steps {
+                sh '''
+                echo "Generating PDF..."
     
-            docker run --rm \
-              -v $(pwd):/workspace \
-              pandoc/core \
-              /workspace/sca/reports/ai-report.txt \
-              -o /workspace/sca/reports/ai-report.pdf
-            '''
+                docker run --rm \
+                  -v $(pwd):/workspace \
+                  pandoc/core \
+                  /workspace/sca/reports/ai-report.txt \
+                  -o /workspace/sca/reports/ai-report.pdf
+                '''
+            }
         }
+
     }
+
     post {
         always {
             echo "Archiving reports..."
