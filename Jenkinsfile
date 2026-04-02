@@ -147,7 +147,7 @@ pipeline {
                 head -n 20 sca/reports/osv-report.json
                 '''
             }
-        }*/
+        }
         stage('Policy Enforcement (FOSSA)') {
             steps {
                 sh '''
@@ -179,7 +179,7 @@ pipeline {
                 head -n 20 sca/reports/fossa-report.json
                 '''
             }
-        }
+        }*/
 
         stage('CI/CD Gate (Trivy Fail on High/Critical)') {
             steps {
