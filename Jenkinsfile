@@ -151,7 +151,7 @@ pipeline {
         stage('Policy Enforcement (FOSSA)') {
             steps {
                 sh '''
-                echo "Running FOSSA analysis..."
+                echo "Running FOSSA analysis + policy check..."
         
                 mkdir -p sca/reports
         
@@ -161,11 +161,20 @@ pipeline {
                   alpine:latest sh -c "
                     apk add --no-cache curl bash git nodejs npm &&
                     curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install-latest.sh | bash &&
+        
                     cd /workspace/temp_repo &&
+        
+                    echo 'Running analyze...'
+                    fossa analyze
+        
+                    echo 'Running policy test...'
+                    fossa test
+        
+                    echo 'Saving local report...'
                     fossa analyze --output --json > /workspace/sca/reports/fossa-report.json
                   "
         
-                echo "Checking FOSSA report..."
+                echo "FOSSA report:"
                 ls -l sca/reports/
                 head -n 20 sca/reports/fossa-report.json
                 '''
