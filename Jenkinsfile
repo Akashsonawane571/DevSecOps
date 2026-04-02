@@ -43,10 +43,12 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
-                echo "Installing dependencies (no build)..."
+                echo "Installing dependencies with cache..."
+        
+                mkdir -p .npm-cache
         
                 cd temp_repo
-                npm install --ignore-scripts
+                npm install --ignore-scripts --cache ../.npm-cache --prefer-offline
                 '''
             }
         }
@@ -115,36 +117,30 @@ pipeline {
                 FIRST=1
         
                 jq -c '.artifacts[]' $SBOM | while read pkg; do
-        
-                  NAME=$(echo $pkg | jq -r '.name')
-                  VERSION=$(echo $pkg | jq -r '.version')
-                  TYPE=$(echo $pkg | jq -r '.type')
-        
-                  # Only scan npm packages
-                  if [ "$TYPE" != "npm" ]; then
-                    continue
-                  fi
-        
-                  echo "Scanning $NAME@$VERSION"
-        
-                  RESP=$(curl -s --max-time 10 https://api.osv.dev/v1/query -d "{
-                    \\"package\\": {
-                      \\"name\\": \\"$NAME\\",
-                      \\"ecosystem\\": \\"npm\\"
-                    },
-                    \\"version\\": \\"$VERSION\\"
-                  }")
-        
-                  if [ "$RESP" != "{}" ]; then
-                    if [ $FIRST -eq 0 ]; then
-                      echo "," >> $OUTPUT
-                    fi
-        
-                    echo $RESP >> $OUTPUT
-                    FIRST=0
-                  fi
-        
-                done
+
+              NAME=$(printf '%s' "$pkg" | jq -r '.name')
+              VERSION=$(printf '%s' "$pkg" | jq -r '.version')
+              TYPE=$(printf '%s' "$pkg" | jq -r '.type')
+            
+              if [ "$TYPE" != "npm" ]; then
+                continue
+              fi
+            
+              echo "Scanning $NAME@$VERSION"
+            
+              RESP=$(curl -s https://api.osv.dev/v1/query -d "{
+                \\"package\\": {
+                  \\"name\\": \\"$NAME\\",
+                  \\"ecosystem\\": \\"npm\\"
+                },
+                \\"version\\": \\"$VERSION\\"
+              }")
+            
+              if [ "$RESP" != "{}" ]; then
+                echo "$RESP"
+              fi
+            
+            done
         
                 echo "]" >> $OUTPUT
         
