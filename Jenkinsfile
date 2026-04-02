@@ -5,6 +5,7 @@ pipeline {
         WORKSPACE_DIR = "${WORKSPACE}"
         SCA_DIR = "${WORKSPACE}/sca"
         FOSSA_API_KEY = credentials('fossa-api-key')  // store in Jenkins credentials
+        OPENAI_API_KEY = credentials('openai-api-key')
     }
 
     stages {
@@ -90,7 +91,7 @@ pipeline {
                   -v $(pwd):/workspace \
                   aquasec/trivy:0.49.1 fs /workspace/temp_repo \
                   --format json \
-                  -o /workspace/sca/reports/trivy-vulnerability-report.json
+                  -o /workspace/sca/reports/trivy-report.json
         
                 echo "Verifying Trivy report..."
                 ls -l sca/reports/
@@ -181,7 +182,7 @@ pipeline {
             }
         }
 
-        stage('CI/CD Gate (Trivy + Report)') {
+        /*stage('CI/CD Gate (Trivy + Report)') {
             steps {
                 sh '''
                 echo "Running Trivy scan and generating report..."
@@ -208,13 +209,37 @@ pipeline {
                 '''
             }
         }
+    }*/
+    stage('AI Security Analysis') {
+        steps {
+            sh '''
+            echo "Running AI analysis..."
+            
+            pip3 install requests
+            
+            python3 ai/ai_analysis.py
+            '''
+        }
     }
-
+    stage('Generate PDF Report') {
+        steps {
+            sh '''
+            echo "Generating PDF..."
+    
+            docker run --rm \
+              -v $(pwd):/workspace \
+              pandoc/core \
+              /workspace/sca/reports/ai-report.txt \
+              -o /workspace/sca/reports/ai-report.pdf
+            '''
+        }
+    }
     post {
         always {
             echo "Archiving reports..."
     
             archiveArtifacts artifacts: 'sca/**/*.json', fingerprint: true
+            archiveArtifacts artifacts: 'sca/reports/*.pdf', fingerprint: true
         }
     }
 }
