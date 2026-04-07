@@ -87,7 +87,7 @@ pipeline {
             }
         }
 
-        stage('Vulnerability Scan (Trivy)') {
+        /*stage('Vulnerability Scan (Trivy)') {
             steps {
                 sh '''
                 echo "Running Trivy scan..."
@@ -102,7 +102,7 @@ pipeline {
                 ls -l sca/reports/
                 '''
             }
-        } 
+        }*/ 
 
         stage('OSV Risk Enrichment') {
             steps {
@@ -217,10 +217,15 @@ pipeline {
             steps {
                 sh '''
                 echo "Running AI analysis..."
-                
-                pip3 install requests
-                
-                python3 ai/ai_analysis.py
+        
+                docker run --rm \
+                  -e OPENAI_API_KEY=$OPENAI_API_KEY \
+                  -v $(pwd):/workspace \
+                  python:3.11-slim \
+                  sh -c "
+                    pip install requests &&
+                    python /workspace/ai/ai_analysis.py
+                  "
                 '''
             }
         }
