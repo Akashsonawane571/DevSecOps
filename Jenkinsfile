@@ -104,7 +104,7 @@ pipeline {
             }
         }*/ 
 
-        stage('OSV Risk Enrichment') {
+        /*stage('OSV Risk Enrichment') {
             steps {
                 sh '''
                 echo "Running OSV enrichment..."
@@ -152,7 +152,7 @@ pipeline {
                 head -n 20 sca/reports/osv-report.json
                 '''
             }
-        }
+        }*/
 
         stage('Policy Enforcement (FOSSA)') {
             steps {
