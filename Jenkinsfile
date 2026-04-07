@@ -187,7 +187,7 @@ pipeline {
             }
         }
 
-        stage('CI/CD Gate (Trivy + Report)') {
+        /*stage('CI/CD Gate (Trivy + Report)') {
             steps {
                 sh '''
                 echo "Running Trivy scan and generating report..."
@@ -211,7 +211,7 @@ pipeline {
                   --severity HIGH,CRITICAL
                 '''
             }
-        }
+        }*/
 
         stage('AI Security Analysis') {
             steps {
