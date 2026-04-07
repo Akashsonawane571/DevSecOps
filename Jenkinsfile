@@ -43,7 +43,7 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        /*stage('Install Dependencies') {
             steps {
                 sh '''
                 echo "Installing dependencies with cache..."
@@ -152,7 +152,7 @@ pipeline {
                 head -n 20 sca/reports/osv-report.json
                 '''
             }
-        }*/
+        }
 
         stage('Policy Enforcement (FOSSA)') {
             steps {
@@ -187,7 +187,7 @@ pipeline {
             }
         }
 
-        /*stage('CI/CD Gate (Trivy + Report)') {
+        stage('CI/CD Gate (Trivy + Report)') {
             steps {
                 sh '''
                 echo "Running Trivy scan and generating report..."
@@ -213,7 +213,7 @@ pipeline {
             }
         }*/
 
-        stage('AI Security Analysis') {
+        /*stage('AI Security Analysis') {
             steps {
                 sh '''
                 echo "Running AI analysis..."
@@ -246,7 +246,7 @@ pipeline {
             }
         }
 
-    }
+    }*/
 
     post {
         always {
