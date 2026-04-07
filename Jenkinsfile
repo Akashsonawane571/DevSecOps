@@ -223,8 +223,10 @@ pipeline {
                   -v $(pwd):/workspace \
                   python:3.11-slim \
                   sh -c "
+                    apt-get update && apt-get install -y wget &&
                     pip install requests &&
-                    python /workspace/ai/ai_analysis.py
+                    wget -O /workspace/ai_analysis.py https://raw.githubusercontent.com/Akashsonawane571/DevSecOps/main/ai/ai_analysis.py &&
+                    python /workspace/ai_analysis.py
                   "
                 '''
             }
