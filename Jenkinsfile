@@ -6,6 +6,7 @@ pipeline {
         SCA_DIR = "${WORKSPACE}/sca"
         FOSSA_API_KEY = credentials('fossa-api-key')  // store in Jenkins credentials
         OPENAI_API_KEY = credentials('openai-api-key')
+        SONAR_TOKEN = credentials('SONAR_TOKEN')
     }
 
     stages {
@@ -87,7 +88,7 @@ pipeline {
             }
         }
 
-        /*stage('Vulnerability Scan (Trivy)') {
+        stage('Vulnerability Scan (Trivy)') {
             steps {
                 sh '''
                 echo "Running Trivy scan..."
@@ -102,9 +103,9 @@ pipeline {
                 ls -l sca/reports/
                 '''
             }
-        }*/ 
+        }
 
-        /*stage('OSV Risk Enrichment') {
+        stage('OSV Risk Enrichment') {
             steps {
                 sh '''
                 echo "Running OSV enrichment..."
@@ -211,9 +212,9 @@ pipeline {
                   --severity HIGH,CRITICAL
                 '''
             }
-        }*/
+        }
 
-        /*stage('AI Security Analysis') {
+        stage('AI Security Analysis') {
             steps {
                 sh '''
                 echo "Running AI analysis..."
@@ -245,49 +246,52 @@ pipeline {
                 '''
             }
         }
+        */
 
-    }*/
-    stage('SAST Scan (Semgrep)') {
-        steps {
-            sh '''
-            echo "Running Semgrep scan..."
-    
-            mkdir -p sast/reports
-    
-            docker run --rm \
-              -v $(pwd):/workspace \
-              returntocorp/semgrep \
-              semgrep scan /workspace/temp_repo \
-              --config=auto \
-              --json \
-              --output=/workspace/sast/reports/semgrep-report.json
-    
-            echo "Semgrep report:"
-            ls -l sast/reports/
-            '''
+        stage('SAST Scan (Semgrep)') {
+            steps {
+                sh '''
+                echo "Running Semgrep scan..."
+
+                mkdir -p sast/reports
+
+                docker run --rm \
+                  -v $(pwd):/workspace \
+                  returntocorp/semgrep \
+                  semgrep scan /workspace/temp_repo \
+                  --config=auto \
+                  --json \
+                  --output=/workspace/sast/reports/semgrep-report.json
+
+                echo "Semgrep report:"
+                ls -l sast/reports/
+                '''
+            }
         }
-    }
-    stage('SAST Scan (SonarQube)') {
-        steps {
-            sh '''
-            echo "Running SonarQube scan..."
-    
-            docker run --rm \
-              -v $(pwd):/workspace \
-              sonarsource/sonar-scanner-cli \
-              -Dsonar.projectKey=devsecops-project \
-              -Dsonar.sources=/workspace/temp_repo \
-              -Dsonar.host.url=http://localhost:9000 \
-              -Dsonar.login=$SONAR_TOKEN
-            '''
+
+        stage('SAST Scan (SonarQube)') {
+            steps {
+                sh '''
+                echo "Running SonarQube scan..."
+
+                docker run --rm \
+                  -v $(pwd):/workspace \
+                  sonarsource/sonar-scanner-cli \
+                  -Dsonar.projectKey=devsecops-project \
+                  -Dsonar.sources=/workspace/temp_repo \
+                  -Dsonar.host.url=http://localhost:9000 \
+                  -Dsonar.login=$SONAR_TOKEN
+                '''
+            }
         }
+
     }
 
     post {
         always {
             echo "Archiving reports..."
-    
-            archiveArtifacts artifacts: 'sca/**/*.json', fingerprint: true
+
+            archiveArtifacts artifacts: 'sca/**/*.json, sast/**/*.json', fingerprint: true
             archiveArtifacts artifacts: 'sca/reports/*.pdf', fingerprint: true
         }
     }
