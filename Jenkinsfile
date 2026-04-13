@@ -247,6 +247,41 @@ pipeline {
         }
 
     }*/
+    stage('SAST Scan (Semgrep)') {
+        steps {
+            sh '''
+            echo "Running Semgrep scan..."
+    
+            mkdir -p sast/reports
+    
+            docker run --rm \
+              -v $(pwd):/workspace \
+              returntocorp/semgrep \
+              semgrep scan /workspace/temp_repo \
+              --config=auto \
+              --json \
+              --output=/workspace/sast/reports/semgrep-report.json
+    
+            echo "Semgrep report:"
+            ls -l sast/reports/
+            '''
+        }
+    }
+    stage('SAST Scan (SonarQube)') {
+        steps {
+            sh '''
+            echo "Running SonarQube scan..."
+    
+            docker run --rm \
+              -v $(pwd):/workspace \
+              sonarsource/sonar-scanner-cli \
+              -Dsonar.projectKey=devsecops-project \
+              -Dsonar.sources=/workspace/temp_repo \
+              -Dsonar.host.url=http://localhost:9000 \
+              -Dsonar.login=$SONAR_TOKEN
+            '''
+        }
+    }
 
     post {
         always {
