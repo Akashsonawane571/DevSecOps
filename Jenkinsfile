@@ -286,7 +286,7 @@ pipeline {
                     }
                 }
             }
-       }
+        }
     post {
         always {
             echo "Archiving reports..."
