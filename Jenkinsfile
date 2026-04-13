@@ -279,7 +279,7 @@ pipeline {
                   sonarsource/sonar-scanner-cli \
                   -Dsonar.projectKey=devsecops-project \
                   -Dsonar.sources=/workspace/temp_repo \
-                  -Dsonar.host.url=http://localhost:9000 \
+                  -Dsonar.host.url=http://172.16.176.129:9000 \
                   -Dsonar.login=$SONAR_TOKEN
                 '''
             }
