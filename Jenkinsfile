@@ -290,12 +290,10 @@ pipeline {
     }
     post {
         always {
-            node {   // ✅ FIX
-                echo "Archiving reports..."
+            echo "Archiving reports..."
     
-                archiveArtifacts artifacts: 'sca/**/*.json, sast/**/*.json', fingerprint: true
-                archiveArtifacts artifacts: 'sca/reports/*.pdf', fingerprint: true
-            }
+            archiveArtifacts artifacts: 'sca/**/*.json, sast/**/*.json', fingerprint: true
+            archiveArtifacts artifacts: 'sca/reports/*.pdf', fingerprint: true
         }
     }
 }
