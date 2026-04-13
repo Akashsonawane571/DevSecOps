@@ -246,7 +246,7 @@ pipeline {
                   -o /workspace/sca/reports/ai-report.pdf
                 '''
             }
-        }
+        }*/
         
 
         stage('SAST Scan (Semgrep)') {
@@ -268,7 +268,7 @@ pipeline {
                 ls -l sast/reports/
                 '''
             }
-        }*/
+        }
 
         stage('SonarQube Scan') {
             steps {
@@ -287,6 +287,7 @@ pipeline {
                 }
             }
         }
+    }
     post {
         always {
             echo "Archiving reports..."
