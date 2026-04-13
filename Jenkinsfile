@@ -289,7 +289,8 @@ pipeline {
         }
     }
     post {
-        always {
+    always {
+        node {   // ✅ FIX
             echo "Archiving reports..."
 
             archiveArtifacts artifacts: 'sca/**/*.json, sast/**/*.json', fingerprint: true
