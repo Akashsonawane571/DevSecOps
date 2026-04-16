@@ -293,7 +293,6 @@ pipeline {
             echo "Archiving reports..."
     
             archiveArtifacts artifacts: 'sca/**/*.json, sast/**/*.json', fingerprint: true
-            archiveArtifacts artifacts: 'sca/reports/*.pdf', fingerprint: true
         }
     }
 }
