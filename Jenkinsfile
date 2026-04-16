@@ -7,7 +7,7 @@ pipeline {
         FOSSA_API_KEY = credentials('fossa-api-key')  // store in Jenkins credentials
         OPENAI_API_KEY = credentials('openai-api-key')
         SONAR_SCANNER = tool name: 'sonar-scanner'
-        SONAR_URL =  'http://172.16.176.129:9000'   //ip of sonarqube
+        SONAR_URL =  'http://13.62.100.36:9000'   //ip of sonarqube
     }
 
     stages {
