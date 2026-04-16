@@ -288,6 +288,22 @@ pipeline {
             }
         }
     }
+    stage('Fetch Sonar Report') {
+        steps {
+            sh '''
+            echo "Fetching SonarQube report..."
+    
+            mkdir -p sca/reports
+    
+            curl -u $SONAR_TOKEN: \
+            "$SONAR_URL/api/issues/search?componentKeys=devsecops-test" \
+            -o sca/reports/sonar-report.json
+    
+            echo "Sonar report saved:"
+            ls -l sca/reports/
+            '''
+        }
+    }
     post {
         always {
             echo "Archiving reports..."
