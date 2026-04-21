@@ -294,8 +294,8 @@ pipeline {
 
                 cd temp_repo
                 
-                docker compose -f .build/docker-compose.yml build
-                docker compose -f .build/docker-compose.yml up -d
+                docker compose -f docker-compose.test.yml build
+                docker compose -f docker-compose.test.yml up -d
                 '''
             }
         }
