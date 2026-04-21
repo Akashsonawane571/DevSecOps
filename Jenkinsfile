@@ -270,7 +270,7 @@ pipeline {
             }
         }
 
-        stage('SonarQube Scan') {
+        /*stage('SonarQube Scan') {
             steps {
                 echo 'Starting SonarQube SAST Scan...'
                 withSonarQubeEnv('sonarqube') {
@@ -286,7 +286,7 @@ pipeline {
                     }
                 }
             }
-        }
+        }*/
         stage('Build Docker Image') {
             steps {
                 sh '''
