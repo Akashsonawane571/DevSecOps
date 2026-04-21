@@ -291,7 +291,9 @@ pipeline {
             steps {
                 sh '''
                 echo "Building containers using Docker Compose with caching..."
-        
+
+                cd temp_repo
+                
                 docker compose -f .build/docker-compose.yml build
                 docker compose -f .build/docker-compose.yml up -d
                 '''
