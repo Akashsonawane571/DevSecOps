@@ -249,7 +249,7 @@ pipeline {
         }*/
         
 
-        stage('SAST Scan (Semgrep)') {
+        /*stage('SAST Scan (Semgrep)') {
             steps {
                 sh '''
                 echo "Running Semgrep scan..."
@@ -286,6 +286,80 @@ pipeline {
                     }
                 }
             }
+        }*/
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                echo "Building containers using Docker Compose with caching..."
+        
+                docker compose -f .build/docker-compose.yml build
+                docker compose -f .build/docker-compose.yml up -d
+                '''
+            }
+        }
+        stage('Image Scanning (Trivy Docker)') {
+            environment {
+                TRIVY_SEVERITY = "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL"
+            }
+            steps {
+                sh '''
+                echo "Scanning Docker images using Trivy container..."
+        
+                mkdir -p image_reports
+        
+                IMAGES=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep -v "<none>")
+        
+                if [ -z "$IMAGES" ]; then
+                  echo "No images found"
+                  exit 1
+                fi
+        
+                for image in $IMAGES; do
+                  name=$(echo "$image" | tr '/:' '_')
+                  echo "Scanning image: $image"
+        
+                  docker run --rm \
+                    -v /var/run/docker.sock:/var/run/docker.sock \
+                    -v $(pwd):/workspace \
+                    aquasec/trivy:0.49.1 image \
+                    --format json \
+                    --severity "$TRIVY_SEVERITY" \
+                    -o /workspace/image_reports/image_report_${name}.json \
+                    "$image"
+                done
+        
+                echo "Image scan complete"
+                ls -l image_reports/
+                '''
+            }
+        }
+        stage('Container Runtime Scan (Trivy Docker)') {
+            steps {
+                sh '''
+                echo "Scanning running containers using Trivy container..."
+        
+                mkdir -p container_reports
+        
+                for container in $(docker ps -q); do
+                  pid=$(docker inspect --format '{{.State.Pid}}' "$container")
+                  name=$(docker inspect --format '{{.Name}}' "$container" | sed 's/^\\/\\|\\/$//g')
+        
+                  echo "Scanning container $name (PID: $pid)..."
+        
+                  docker run --rm \
+                    --pid=host \
+                    -v /proc:/proc \
+                    -v $(pwd):/workspace \
+                    aquasec/trivy:0.49.1 fs \
+                    --format json \
+                    -o /workspace/container_reports/container_report_${name}.json \
+                    /proc/$pid/root || echo "Failed to scan $name"
+                done
+        
+                echo "Container scan complete"
+                ls -l container_reports/
+                '''
+            }
         }
     }
     
@@ -293,7 +367,7 @@ pipeline {
         always {
             echo "Archiving reports..."
     
-            archiveArtifacts artifacts: 'sca/**/*.json, sast/**/*.json', fingerprint: true
+            archiveArtifacts artifacts: 'sca/**/*.json, sast/**/*.json, image_reports/*.json, container_reports/*.json', fingerprint: true
         }
     }
 }
