@@ -76,7 +76,7 @@ pipeline {
             }
         }
 
-        stage('Vulnerability Scan (Grype)') {
+        /*stage('Vulnerability Scan (Grype)') {
             steps {
                 sh '''
                 echo "Running Grype scan..."
@@ -189,7 +189,7 @@ pipeline {
             }
         }
 
-        /*stage('CI/CD Gate (Trivy + Report)') {
+        stage('CI/CD Gate (Trivy + Report)') {
             steps {
                 sh '''
                 echo "Running Trivy scan and generating report..."
@@ -246,7 +246,7 @@ pipeline {
                   -o /workspace/sca/reports/ai-report.pdf
                 '''
             }
-        }*/
+        }
         
 
         stage('SAST Scan (Semgrep)') {
@@ -290,16 +290,15 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh '''
-                echo "Building containers using Docker Compose with caching..."
-
+                echo "Building Docker image..."
+        
                 cd temp_repo
-                
-                docker compose -f docker-compose.test.yml build
-                docker compose -f docker-compose.test.yml up -d
+        
+                docker build -t akashsonawane571/devsecops:latest .
                 '''
             }
         }
-        stage('Image Scanning (Trivy Docker)') {
+        /*stage('Image Scanning (Trivy Docker)') {
             environment {
                 TRIVY_SEVERITY = "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL"
             }
@@ -334,6 +333,23 @@ pipeline {
                 ls -l image_reports/
                 '''
             }
+        }*/
+        stage('Run Application') {
+            steps {
+                sh '''
+                echo "Stopping old container (if any)..."
+                docker rm -f juice-app || true
+        
+                echo "Running container..."
+                docker run -d -p 3000:3000 --name juice-app akashsonawane571/devsecops:latest
+        
+                echo "Waiting for app to start..."
+                sleep 20
+        
+                echo "Health check..."
+                curl -I http://localhost:3000 || exit 1
+                '''
+            }
         }
         stage('Container Runtime Scan (Trivy Docker)') {
             steps {
@@ -363,13 +379,52 @@ pipeline {
                 '''
             }
         }
-    }
-    
+        stage('DAST Scan (OWASP ZAP)') {
+            steps {
+                sh '''
+                echo "Running OWASP ZAP scan..."
+        
+                mkdir -p dast_reports
+        
+                docker run --rm \
+                  --network host \
+                  -v $(pwd)/dast_reports:/zap/wrk \
+                  owasp/zap2docker-stable \
+                  zap-baseline.py \
+                  -t http://localhost:3000 \
+                  -J zap-report.json || true
+        
+                echo "ZAP scan completed"
+                ls -l dast_reports/
+                '''
+            }
+        }
+                stage('DAST Scan (Nuclei)') {
+            steps {
+                sh '''
+                echo "Running Nuclei scan..."
+        
+                mkdir -p dast_reports
+        
+                docker run --rm \
+                  --network host \
+                  -v $(pwd)/dast_reports:/workspace \
+                  projectdiscovery/nuclei:latest \
+                  -u http://localhost:3000 \
+                  -json \
+                  -o /workspace/nuclei-report.json
+        
+                echo "Nuclei scan completed"
+                ls -l dast_reports/
+                '''
+            }
+        }
+    } 
     post {
         always {
             echo "Archiving reports..."
     
-            archiveArtifacts artifacts: 'sca/**/*.json, sast/**/*.json, image_reports/*.json, container_reports/*.json', fingerprint: true
+            archiveArtifacts artifacts: 'sca/**/*.json, sast/**/*.json, image_reports/*.json, container_reports/*.json, dast_reports/*.json', fingerprint: true
         }
     }
 }
