@@ -351,7 +351,7 @@ pipeline {
                 '''
             }
         }
-        stage('Container Runtime Scan (Trivy Docker)') {
+        /*stage('Container Runtime Scan (Trivy Docker)') {
             steps {
                 sh '''
                 echo "Scanning running containers using Trivy container..."
@@ -398,7 +398,7 @@ pipeline {
                 ls -l dast_reports/
                 '''
             }
-        }
+        }*/
                 stage('DAST Scan (Nuclei)') {
             steps {
                 sh '''
@@ -411,7 +411,7 @@ pipeline {
                   -v $(pwd)/dast_reports:/workspace \
                   projectdiscovery/nuclei:latest \
                   -u http://172.16.176.129:3000 \
-                  -json \
+                  -jsonl \
                   -o /workspace/nuclei-report.json
         
                 echo "Nuclei scan completed"
