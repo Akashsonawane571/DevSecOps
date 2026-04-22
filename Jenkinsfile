@@ -286,7 +286,7 @@ pipeline {
                     }
                 }
             }
-        }*/
+        }
         stage('Build Docker Image') {
             steps {
                 sh '''
@@ -347,7 +347,7 @@ pipeline {
                 sleep 20
         
                 echo "Health check..."
-                curl -I http://localhost:3000 || exit 1
+                curl -I http://172.16.176.129:3000 || exit 1
                 '''
             }
         }
@@ -391,7 +391,7 @@ pipeline {
                   -v $(pwd)/dast_reports:/zap/wrk \
                   owasp/zap2docker-stable \
                   zap-baseline.py \
-                  -t http://localhost:3000 \
+                  -t http://172.16.176.129:3000 \
                   -J zap-report.json || true
         
                 echo "ZAP scan completed"
@@ -410,7 +410,7 @@ pipeline {
                   --network host \
                   -v $(pwd)/dast_reports:/workspace \
                   projectdiscovery/nuclei:latest \
-                  -u http://localhost:3000 \
+                  -u http://172.16.176.129:3000 \
                   -json \
                   -o /workspace/nuclei-report.json
         
