@@ -341,10 +341,10 @@ pipeline {
                 
         
                 echo "Running container..."
-                docker run -d -p 3000:3000 --name juice-app akashsonawane571/devsecops:latest
+                
         
                 echo "Waiting for app to start..."
-                sleep 60
+               
         
                 echo "Health check..."
                 curl -I http://172.16.176.129:3000 || exit 1
