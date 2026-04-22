@@ -45,7 +45,7 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        /*stage('Install Dependencies') {
             steps {
                 sh '''
                 echo "Installing dependencies with cache..."
@@ -76,7 +76,7 @@ pipeline {
             }
         }
 
-        /*stage('Vulnerability Scan (Grype)') {
+        stage('Vulnerability Scan (Grype)') {
             steps {
                 sh '''
                 echo "Running Grype scan..."
