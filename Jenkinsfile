@@ -389,7 +389,7 @@ pipeline {
                 docker run --rm \
                   --network host \
                   -v $(pwd)/dast_reports:/zap/wrk \
-                  owasp/zap2docker-stable \
+                  zaproxy/zap-stable \
                   zap-baseline.py \
                   -t http://172.16.176.129:3000 \
                   -J zap-report.json || true
