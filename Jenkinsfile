@@ -425,7 +425,7 @@ pipeline {
                     sh '''
                     echo "Uploading all reports to DefectDojo..."
         
-                    DD_URL="http://localhost:8081/api/v2/import-scan/"
+                    DD_URL="http://172.16.176.129:8081/api/v2/import-scan/"
                     PRODUCT="DevSecOps Project"
                     ENGAGEMENT="Jenkins Pipeline Run"
         
