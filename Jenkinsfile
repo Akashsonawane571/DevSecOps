@@ -338,13 +338,13 @@ pipeline {
             steps {
                 sh '''
                 echo "Stopping old container (if any)..."
-                
+                docker rm -f juice-app || true
         
                 echo "Running container..."
-                
+                docker run -d -p 3000:3000 --name juice-app akashsonawane571/devsecops:latest
         
                 echo "Waiting for app to start..."
-               
+                sleep 60
         
                 echo "Health check..."
                 curl -I http://172.16.176.129:3000 || exit 1
@@ -378,7 +378,7 @@ pipeline {
                 ls -l container_reports/
                 '''
             }
-        }
+        }*/
         stage('DAST Scan (OWASP ZAP)') {
             steps {
                 sh '''
@@ -398,8 +398,8 @@ pipeline {
                 ls -l dast_reports/
                 '''
             }
-        }*/
-                stage('DAST Scan (Nuclei)') {
+        }
+        stage('DAST Scan (Nuclei)') {
             steps {
                 sh '''
                 echo "Running Nuclei scan..."
@@ -417,6 +417,64 @@ pipeline {
                 echo "Nuclei scan completed"
                 ls -l dast_reports/
                 '''
+            }
+        }
+        stage('Upload Reports to DefectDojo') {
+            steps {
+                withCredentials([string(credentialsId: 'DEFECTDOJO_TOKEN', variable: 'DD_TOKEN')]) {
+                    sh '''
+                    echo "Uploading all reports to DefectDojo..."
+        
+                    DD_URL="http://localhost:8081/api/v2/import-scan/"
+                    PRODUCT="DevSecOps Project"
+                    ENGAGEMENT="Jenkins Pipeline Run"
+        
+                    upload_report() {
+                      FILE=$1
+                      TYPE=$2
+        
+                      if [ -f "$FILE" ]; then
+                        echo "Uploading $FILE as $TYPE"
+        
+                        curl -s -X POST "$DD_URL" \
+                          -H "Authorization: Token $DD_TOKEN" \
+                          -F "file=@$FILE" \
+                          -F "scan_type=$TYPE" \
+                          -F "product_name=$PRODUCT" \
+                          -F "engagement_name=$ENGAGEMENT" \
+                          -F "active=true" \
+                          -F "verified=true" \
+                          || echo "Failed to upload $FILE"
+                      else
+                        echo "Skipping $FILE (not found)"
+                      fi
+                    }
+        
+                    echo "==== SAST ===="
+                    upload_report "sast/reports/semgrep-report.json" "Semgrep JSON Report"
+        
+                    echo "==== SCA ===="
+                    upload_report "sca/reports/trivy-report.json" "Trivy Scan"
+                    upload_report "sca/reports/grype-report.json" "Grype Scan"
+        
+                    # Optional (future support / generic import)
+                    upload_report "sca/sbom/sbom.json" "CycloneDX"
+                    upload_report "sca/reports/osv-report.json" "Generic Findings Import"
+                    upload_report "sca/reports/fossa-report.json" "Generic Findings Import"
+        
+                    echo "==== IMAGE SCAN ===="
+                    upload_report "image_reports/final_image_scan.json" "Trivy Scan"
+        
+                    echo "==== CONTAINER SCAN ===="
+                    upload_report "container_reports/container_report_juice-app.json" "Trivy Scan"
+        
+                    echo "==== DAST ===="
+                    upload_report "dast_reports/zap-report.json" "ZAP Scan"
+                    upload_report "dast_reports/nuclei-report.json" "Nuclei Scan"
+        
+                    echo "All uploads completed"
+                    '''
+                }
             }
         }
     } 
