@@ -45,7 +45,7 @@ pipeline {
             }
         }
 
-        /*stage('Install Dependencies') {
+        stage('Install Dependencies') {
             steps {
                 sh '''
                 echo "Installing dependencies with cache..."
@@ -215,40 +215,6 @@ pipeline {
             }
         }
 
-        stage('AI Security Analysis') {
-            steps {
-                sh '''
-                echo "Running AI analysis..."
-        
-                docker run --rm \
-                  -e OPENAI_API_KEY=$OPENAI_API_KEY \
-                  -v $(pwd):/workspace \
-                  python:3.11-slim \
-                  sh -c "
-                    apt-get update && apt-get install -y wget &&
-                    pip install requests &&
-                    wget -O /workspace/ai_analysis.py https://raw.githubusercontent.com/Akashsonawane571/DevSecOps/main/ai/ai_analysis.py &&
-                    python /workspace/ai_analysis.py
-                  "
-                '''
-            }
-        }
-
-        stage('Generate PDF Report') {
-            steps {
-                sh '''
-                echo "Generating PDF..."
-    
-                docker run --rm \
-                  -v $(pwd):/workspace \
-                  pandoc/core \
-                  /workspace/sca/reports/ai-report.txt \
-                  -o /workspace/sca/reports/ai-report.pdf
-                '''
-            }
-        }
-        
-
         stage('SAST Scan (Semgrep)') {
             steps {
                 sh '''
@@ -270,7 +236,7 @@ pipeline {
             }
         }
 
-        /*stage('SonarQube Scan') {
+        stage('SonarQube Scan') {
             steps {
                 echo 'Starting SonarQube SAST Scan...'
                 withSonarQubeEnv('sonarqube') {
@@ -298,7 +264,7 @@ pipeline {
                 '''
             }
         }
-        /*stage('Image Scanning (Trivy Docker)') {
+        stage('Image Scanning (Trivy Docker)') {
             environment {
                 TRIVY_SEVERITY = "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL"
             }
@@ -333,25 +299,25 @@ pipeline {
                 ls -l image_reports/
                 '''
             }
-        }*/
+        }
         stage('Run Application') {
             steps {
                 sh '''
                 echo "Stopping old container (if any)..."
-                
+                docker rm -f juice-app || true
         
                 echo "Running container..."
-                
+                docker run -d -p 3000:3000 --name juice-app akashsonawane571/devsecops:latest
         
                 echo "Waiting for app to start..."
-                
+                 sleep 120
         
                 echo "Health check..."
                 curl -I http://172.16.176.129:3000 || exit 1
                 '''
             }
         }
-        /*stage('Container Runtime Scan (Trivy Docker)') {
+        stage('Container Runtime Scan (Trivy Docker)') {
             steps {
                 sh '''
                 echo "Scanning running containers using Trivy container..."
@@ -378,7 +344,7 @@ pipeline {
                 ls -l container_reports/
                 '''
             }
-        }*/
+        }
         stage('DAST Scan (OWASP ZAP)') {
             steps {
                 sh '''
