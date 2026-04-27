@@ -261,6 +261,8 @@ pipeline {
                 cd temp_repo
         
                 docker build -t akashsonawane571/devsecops:latest .
+                
+                docker system prune -f
                 '''
             }
         }
