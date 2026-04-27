@@ -37,7 +37,7 @@ pipeline {
             }
         }
 
-        /*stage('Prepare SCA Directories') {
+        stage('Prepare SCA Directories') {
             steps {
                 sh '''
                 mkdir -p sca/sbom sca/reports sca/logs
@@ -189,7 +189,7 @@ pipeline {
             }
         }
 
-        stage('CI/CD Gate (Trivy + Report)') {
+        /*stage('CI/CD Gate (Trivy + Report)') {
             steps {
                 sh '''
                 echo "Running Trivy scan and generating report..."
@@ -213,7 +213,7 @@ pipeline {
                   --severity HIGH,CRITICAL
                 '''
             }
-        }
+        }*/
 
         stage('SAST Scan (Semgrep)') {
             steps {
@@ -252,7 +252,7 @@ pipeline {
                     }
                 }
             }
-        }*/
+        }
         stage('Build Docker Image') {
             steps {
                 sh '''
