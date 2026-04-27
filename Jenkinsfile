@@ -37,7 +37,7 @@ pipeline {
             }
         }
 
-        stage('Prepare SCA Directories') {
+        /*stage('Prepare SCA Directories') {
             steps {
                 sh '''
                 mkdir -p sca/sbom sca/reports sca/logs
@@ -252,7 +252,7 @@ pipeline {
                     }
                 }
             }
-        }
+        }*/
         stage('Build Docker Image') {
             steps {
                 sh '''
