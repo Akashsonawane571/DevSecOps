@@ -324,9 +324,9 @@ pipeline {
                 elif [ "$TECH" = "react" ] || [ "$TECH" = "vue" ] || [ "$TECH" = "angular" ]; then
         
                     echo 'FROM node:18 AS build' >> Dockerfile
-                    echo 'WORKDIR /app' >> Dockerfile
+                    echo 'WORKDIR /app' >> Dockerfile    
                     echo 'COPY package*.json ./' >> Dockerfile
-                    echo 'RUN npm install --legacy-peer-deps' >> Dockerfile
+                    echo 'RUN npm install --legacy-peer-deps --include=dev' >> Dockerfile
                     echo 'COPY . .' >> Dockerfile
                     echo 'RUN npm run build' >> Dockerfile
                     echo 'FROM nginx:alpine' >> Dockerfile
