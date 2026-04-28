@@ -320,19 +320,14 @@ pipeline {
         'EXPOSE 80' \
         'CMD ["nginx","-g","daemon off;"]' > Dockerfile
         
-                elif [ "$TECH" = "react" ] || [ "$TECH" = "vue" ] || [ "$TECH" = "angular" ]; then
+        elif [ "$TECH" = "react" ] || [ "$TECH" = "vue" ] || [ "$TECH" = "angular" ]; then
         
-                    printf '%s\n' \
+        cat > Dockerfile <<'EOF'
         FROM node:18 AS build
         WORKDIR /app
-        
         COPY package*.json ./
-        
-        RUN npm cache clean --force
         RUN npm install --legacy-peer-deps
-        
         COPY . .
-        
         RUN npm run build
         
         FROM nginx:alpine
@@ -341,6 +336,9 @@ pipeline {
         COPY --from=build /app/dist /usr/share/nginx/html
         EXPOSE 80
         CMD ["nginx","-g","daemon off;"]
+        EOF
+        
+        docker build -t $IMAGE .
         
                 elif [ "$TECH" = "nodejs" ]; then
         
