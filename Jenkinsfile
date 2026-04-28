@@ -323,19 +323,24 @@ pipeline {
                 elif [ "$TECH" = "react" ] || [ "$TECH" = "vue" ] || [ "$TECH" = "angular" ]; then
         
                     printf '%s\n' \
-        'FROM node:18 AS build' \
-        'WORKDIR /app' \
-        'COPY package*.json ./' \
-        'RUN npm install' \
-        'COPY . .' \
-        'RUN npm run build' \
-        '' \
-        'FROM nginx:alpine' \
-        'RUN rm -rf /usr/share/nginx/html/*' \
-        'COPY --from=build /app/build /usr/share/nginx/html' \
-        'COPY --from=build /app/dist /usr/share/nginx/html' \
-        'EXPOSE 80' \
-        'CMD ["nginx","-g","daemon off;"]' > Dockerfile
+        FROM node:18 AS build
+        WORKDIR /app
+        
+        COPY package*.json ./
+        
+        RUN npm cache clean --force
+        RUN npm install --legacy-peer-deps
+        
+        COPY . .
+        
+        RUN npm run build
+        
+        FROM nginx:alpine
+        RUN rm -rf /usr/share/nginx/html/*
+        COPY --from=build /app/build /usr/share/nginx/html
+        COPY --from=build /app/dist /usr/share/nginx/html
+        EXPOSE 80
+        CMD ["nginx","-g","daemon off;"]
         
                 elif [ "$TECH" = "nodejs" ]; then
         
