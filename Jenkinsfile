@@ -307,104 +307,78 @@ pipeline {
         
                 echo "Detected stack: $TECH"
         
-                create_static_dockerfile() {
-        cat > Dockerfile <<'EOF'
-        FROM nginx:alpine
-        WORKDIR /usr/share/nginx/html
-        COPY . .
-        EXPOSE 80
-        CMD ["nginx","-g","daemon off;"]
-        EOF
-                }
+                if [ "$TECH" = "dockerfile" ]; then
         
-                create_frontend_dockerfile() {
-        cat > Dockerfile <<'EOF'
-        FROM node:18 AS build
-        WORKDIR /app
-        COPY package*.json ./
-        RUN npm install
-        COPY . .
-        RUN npm run build
+                    echo "Using existing repository Dockerfile"
         
-        FROM nginx:alpine
-        RUN rm -rf /usr/share/nginx/html/*
-        COPY --from=build /app/build /usr/share/nginx/html 2>/dev/null || true
-        COPY --from=build /app/dist /usr/share/nginx/html 2>/dev/null || true
-        EXPOSE 80
-        CMD ["nginx","-g","daemon off;"]
-        EOF
-                }
+                elif [ "$TECH" = "static" ]; then
         
-                create_node_dockerfile() {
-        cat > Dockerfile <<'EOF'
-        FROM node:18
-        WORKDIR /app
-        COPY package*.json ./
-        RUN npm install
-        COPY . .
-        EXPOSE 3000
-        CMD ["npm","start"]
-        EOF
-                }
+                    printf '%s\n' \
+        'FROM nginx:alpine' \
+        'WORKDIR /usr/share/nginx/html' \
+        'COPY . .' \
+        'EXPOSE 80' \
+        'CMD ["nginx","-g","daemon off;"]' > Dockerfile
         
-                create_python_dockerfile() {
-        cat > Dockerfile <<'EOF'
-        FROM python:3.11-slim
-        WORKDIR /app
-        COPY . .
-        RUN pip install --no-cache-dir -r requirements.txt || true
-        EXPOSE 5000
-        CMD ["python","app.py"]
-        EOF
-                }
+                elif [ "$TECH" = "react" ] || [ "$TECH" = "vue" ] || [ "$TECH" = "angular" ]; then
         
-                create_java_dockerfile() {
-        cat > Dockerfile <<'EOF'
-        FROM maven:3.9-eclipse-temurin-17 AS build
-        WORKDIR /app
-        COPY . .
-        RUN mvn clean package -DskipTests
+                    printf '%s\n' \
+        'FROM node:18 AS build' \
+        'WORKDIR /app' \
+        'COPY package*.json ./' \
+        'RUN npm install' \
+        'COPY . .' \
+        'RUN npm run build' \
+        '' \
+        'FROM nginx:alpine' \
+        'RUN rm -rf /usr/share/nginx/html/*' \
+        'COPY --from=build /app/build /usr/share/nginx/html' \
+        'COPY --from=build /app/dist /usr/share/nginx/html' \
+        'EXPOSE 80' \
+        'CMD ["nginx","-g","daemon off;"]' > Dockerfile
         
-        FROM eclipse-temurin:17-jre
-        WORKDIR /app
-        COPY --from=build /app/target/*.jar app.jar
-        EXPOSE 8080
-        CMD ["java","-jar","app.jar"]
-        EOF
-                }
+                elif [ "$TECH" = "nodejs" ]; then
         
-                case "$TECH" in
-                    dockerfile)
-                        echo "Using repository Dockerfile"
-                        ;;
-                    static)
-                        echo "Generating static website Dockerfile"
-                        create_static_dockerfile
-                        ;;
-                    react|vue|angular)
-                        echo "Generating frontend framework Dockerfile"
-                        create_frontend_dockerfile
-                        ;;
-                    nodejs)
-                        echo "Generating Node.js Dockerfile"
-                        create_node_dockerfile
-                        ;;
-                    python)
-                        echo "Generating Python Dockerfile"
-                        create_python_dockerfile
-                        ;;
-                    java)
-                        echo "Generating Java Dockerfile"
-                        create_java_dockerfile
-                        ;;
-                    *)
-                        echo "Unsupported or unknown repository type: $TECH"
-                        exit 1
-                        ;;
-                esac
+                    printf '%s\n' \
+        'FROM node:18' \
+        'WORKDIR /app' \
+        'COPY package*.json ./' \
+        'RUN npm install' \
+        'COPY . .' \
+        'EXPOSE 3000' \
+        'CMD ["npm","start"]' > Dockerfile
+        
+                elif [ "$TECH" = "python" ]; then
+        
+                    printf '%s\n' \
+        'FROM python:3.11-slim' \
+        'WORKDIR /app' \
+        'COPY . .' \
+        'RUN pip install --no-cache-dir -r requirements.txt || true' \
+        'EXPOSE 5000' \
+        'CMD ["python","app.py"]' > Dockerfile
+        
+                elif [ "$TECH" = "java" ]; then
+        
+                    printf '%s\n' \
+        'FROM maven:3.9-eclipse-temurin-17 AS build' \
+        'WORKDIR /app' \
+        'COPY . .' \
+        'RUN mvn clean package -DskipTests' \
+        '' \
+        'FROM eclipse-temurin:17-jre' \
+        'WORKDIR /app' \
+        'COPY --from=build /app/target/*.jar app.jar' \
+        'EXPOSE 8080' \
+        'CMD ["java","-jar","app.jar"]' > Dockerfile
+        
+                else
+                    echo "Unsupported or unknown repository type: $TECH"
+                    exit 1
+                fi
         
                 echo "Dockerfile preview:"
-                head -n 20 Dockerfile || true
+                head -20 Dockerfile || true
         
                 docker build -t $IMAGE .
         
