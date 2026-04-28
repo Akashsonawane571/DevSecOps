@@ -329,6 +329,7 @@ pipeline {
                     echo 'RUN npm install --legacy-peer-deps --include=dev' >> Dockerfile
                     echo 'COPY . .' >> Dockerfile
                     echo 'RUN npm run build' >> Dockerfile
+                    echo 'RUN if [ -d build ]; then cp -r build /output; elif [ -d dist ]; then cp -r dist /output; fi' >> Dockerfile
                     echo 'FROM nginx:alpine' >> Dockerfile
                     echo 'RUN rm -rf /usr/share/nginx/html/*' >> Dockerfile
                     echo 'COPY --from=build /app/build /usr/share/nginx/html' >> Dockerfile
