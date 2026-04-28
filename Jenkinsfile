@@ -313,67 +313,82 @@ pipeline {
         
                 elif [ "$TECH" = "static" ]; then
         
-                    printf '%s\n' \
-        'FROM nginx:alpine' \
-        'WORKDIR /usr/share/nginx/html' \
-        'COPY . .' \
-        'EXPOSE 80' \
-        'CMD ["nginx","-g","daemon off;"]' > Dockerfile
+        cat > Dockerfile <<'EOF'
+        FROM nginx:alpine
+        WORKDIR /usr/share/nginx/html
+        COPY . .
+        EXPOSE 80
+        CMD ["nginx","-g","daemon off;"]
+        EOF
         
-        elif [ "$TECH" = "react" ] || [ "$TECH" = "vue" ] || [ "$TECH" = "angular" ]; then
+                elif [ "$TECH" = "react" ] || [ "$TECH" = "vue" ] || [ "$TECH" = "angular" ]; then
         
         cat > Dockerfile <<'EOF'
         FROM node:18 AS build
         WORKDIR /app
+        
         COPY package*.json ./
         RUN npm install --legacy-peer-deps
+        
         COPY . .
         RUN npm run build
         
         FROM nginx:alpine
         RUN rm -rf /usr/share/nginx/html/*
-        COPY --from=build /app/build /usr/share/nginx/html
-        COPY --from=build /app/dist /usr/share/nginx/html
+        
+        COPY --from=build /app/build /usr/share/nginx/html 2>/dev/null || true
+        COPY --from=build /app/dist /usr/share/nginx/html 2>/dev/null || true
+        
         EXPOSE 80
         CMD ["nginx","-g","daemon off;"]
         EOF
         
-        docker build -t $IMAGE .
-        
                 elif [ "$TECH" = "nodejs" ]; then
         
-                    printf '%s\n' \
-        'FROM node:18' \
-        'WORKDIR /app' \
-        'COPY package*.json ./' \
-        'RUN npm install' \
-        'COPY . .' \
-        'EXPOSE 3000' \
-        'CMD ["npm","start"]' > Dockerfile
+        cat > Dockerfile <<'EOF'
+        FROM node:18
+        WORKDIR /app
+        
+        COPY package*.json ./
+        RUN npm install
+        
+        COPY . .
+        
+        EXPOSE 3000
+        CMD ["npm","start"]
+        EOF
         
                 elif [ "$TECH" = "python" ]; then
         
-                    printf '%s\n' \
-        'FROM python:3.11-slim' \
-        'WORKDIR /app' \
-        'COPY . .' \
-        'RUN pip install --no-cache-dir -r requirements.txt || true' \
-        'EXPOSE 5000' \
-        'CMD ["python","app.py"]' > Dockerfile
+        cat > Dockerfile <<'EOF'
+        FROM python:3.11-slim
+        WORKDIR /app
+        
+        COPY . .
+        
+        RUN pip install --no-cache-dir -r requirements.txt || true
+        
+        EXPOSE 5000
+        CMD ["python","app.py"]
+        EOF
         
                 elif [ "$TECH" = "java" ]; then
         
-                    printf '%s\n' \
-        'FROM maven:3.9-eclipse-temurin-17 AS build' \
-        'WORKDIR /app' \
-        'COPY . .' \
-        'RUN mvn clean package -DskipTests' \
-        '' \
-        'FROM eclipse-temurin:17-jre' \
-        'WORKDIR /app' \
-        'COPY --from=build /app/target/*.jar app.jar' \
-        'EXPOSE 8080' \
-        'CMD ["java","-jar","app.jar"]' > Dockerfile
+        cat > Dockerfile <<'EOF'
+        FROM maven:3.9-eclipse-temurin-17 AS build
+        WORKDIR /app
+        
+        COPY . .
+        RUN mvn clean package -DskipTests
+        
+        FROM eclipse-temurin:17-jre
+        WORKDIR /app
+        
+        COPY --from=build /app/target/*.jar app.jar
+        
+        EXPOSE 8080
+        CMD ["java","-jar","app.jar"]
+        EOF
         
                 else
                     echo "Unsupported or unknown repository type: $TECH"
