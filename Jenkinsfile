@@ -307,88 +307,65 @@ pipeline {
         
                 echo "Detected stack: $TECH"
         
+                rm -f Dockerfile
+        
                 if [ "$TECH" = "dockerfile" ]; then
         
                     echo "Using existing repository Dockerfile"
         
                 elif [ "$TECH" = "static" ]; then
         
-        cat > Dockerfile <<'EOF'
-        FROM nginx:alpine
-        WORKDIR /usr/share/nginx/html
-        COPY . .
-        EXPOSE 80
-        CMD ["nginx","-g","daemon off;"]
-        EOF
+                    echo 'FROM nginx:alpine' >> Dockerfile
+                    echo 'WORKDIR /usr/share/nginx/html' >> Dockerfile
+                    echo 'COPY . .' >> Dockerfile
+                    echo 'EXPOSE 80' >> Dockerfile
+                    echo 'CMD ["nginx","-g","daemon off;"]' >> Dockerfile
         
                 elif [ "$TECH" = "react" ] || [ "$TECH" = "vue" ] || [ "$TECH" = "angular" ]; then
         
-        cat > Dockerfile <<'EOF'
-        FROM node:18 AS build
-        WORKDIR /app
-        
-        COPY package*.json ./
-        RUN npm install --legacy-peer-deps
-        
-        COPY . .
-        RUN npm run build
-        
-        FROM nginx:alpine
-        RUN rm -rf /usr/share/nginx/html/*
-        
-        COPY --from=build /app/build /usr/share/nginx/html 2>/dev/null || true
-        COPY --from=build /app/dist /usr/share/nginx/html 2>/dev/null || true
-        
-        EXPOSE 80
-        CMD ["nginx","-g","daemon off;"]
-        EOF
+                    echo 'FROM node:18 AS build' >> Dockerfile
+                    echo 'WORKDIR /app' >> Dockerfile
+                    echo 'COPY package*.json ./' >> Dockerfile
+                    echo 'RUN npm install --legacy-peer-deps' >> Dockerfile
+                    echo 'COPY . .' >> Dockerfile
+                    echo 'RUN npm run build' >> Dockerfile
+                    echo 'FROM nginx:alpine' >> Dockerfile
+                    echo 'RUN rm -rf /usr/share/nginx/html/*' >> Dockerfile
+                    echo 'COPY --from=build /app/build /usr/share/nginx/html' >> Dockerfile
+                    echo 'COPY --from=build /app/dist /usr/share/nginx/html' >> Dockerfile
+                    echo 'EXPOSE 80' >> Dockerfile
+                    echo 'CMD ["nginx","-g","daemon off;"]' >> Dockerfile
         
                 elif [ "$TECH" = "nodejs" ]; then
         
-        cat > Dockerfile <<'EOF'
-        FROM node:18
-        WORKDIR /app
-        
-        COPY package*.json ./
-        RUN npm install
-        
-        COPY . .
-        
-        EXPOSE 3000
-        CMD ["npm","start"]
-        EOF
+                    echo 'FROM node:18' >> Dockerfile
+                    echo 'WORKDIR /app' >> Dockerfile
+                    echo 'COPY package*.json ./' >> Dockerfile
+                    echo 'RUN npm install' >> Dockerfile
+                    echo 'COPY . .' >> Dockerfile
+                    echo 'EXPOSE 3000' >> Dockerfile
+                    echo 'CMD ["npm","start"]' >> Dockerfile
         
                 elif [ "$TECH" = "python" ]; then
         
-        cat > Dockerfile <<'EOF'
-        FROM python:3.11-slim
-        WORKDIR /app
-        
-        COPY . .
-        
-        RUN pip install --no-cache-dir -r requirements.txt || true
-        
-        EXPOSE 5000
-        CMD ["python","app.py"]
-        EOF
+                    echo 'FROM python:3.11-slim' >> Dockerfile
+                    echo 'WORKDIR /app' >> Dockerfile
+                    echo 'COPY . .' >> Dockerfile
+                    echo 'RUN pip install --no-cache-dir -r requirements.txt || true' >> Dockerfile
+                    echo 'EXPOSE 5000' >> Dockerfile
+                    echo 'CMD ["python","app.py"]' >> Dockerfile
         
                 elif [ "$TECH" = "java" ]; then
         
-        cat > Dockerfile <<'EOF'
-        FROM maven:3.9-eclipse-temurin-17 AS build
-        WORKDIR /app
-        
-        COPY . .
-        RUN mvn clean package -DskipTests
-        
-        FROM eclipse-temurin:17-jre
-        WORKDIR /app
-        
-        COPY --from=build /app/target/*.jar app.jar
-        
-        EXPOSE 8080
-        CMD ["java","-jar","app.jar"]
-        EOF
+                    echo 'FROM maven:3.9-eclipse-temurin-17 AS build' >> Dockerfile
+                    echo 'WORKDIR /app' >> Dockerfile
+                    echo 'COPY . .' >> Dockerfile
+                    echo 'RUN mvn clean package -DskipTests' >> Dockerfile
+                    echo 'FROM eclipse-temurin:17-jre' >> Dockerfile
+                    echo 'WORKDIR /app' >> Dockerfile
+                    echo 'COPY --from=build /app/target/*.jar app.jar' >> Dockerfile
+                    echo 'EXPOSE 8080' >> Dockerfile
+                    echo 'CMD ["java","-jar","app.jar"]' >> Dockerfile
         
                 else
                     echo "Unsupported or unknown repository type: $TECH"
@@ -396,7 +373,7 @@ pipeline {
                 fi
         
                 echo "Dockerfile preview:"
-                head -20 Dockerfile || true
+                cat Dockerfile
         
                 docker build -t $IMAGE .
         
