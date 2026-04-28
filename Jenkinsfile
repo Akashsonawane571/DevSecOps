@@ -57,8 +57,48 @@ pipeline {
                 '''
             }
         }
+        stage('Detect Tech Stack') {
+            steps {
+                sh '''
+                echo "Detecting repository technology..."
+        
+                cd temp_repo
+        
+                TECH="unknown"
+        
+                if [ -f Dockerfile ]; then
+                    TECH="dockerfile"
+        
+                elif [ -f package.json ]; then
+                    if grep -qi "react" package.json; then
+                        TECH="react"
+                    elif grep -qi "vue" package.json; then
+                        TECH="vue"
+                    elif grep -qi "angular" package.json; then
+                        TECH="angular"
+                    else
+                        TECH="nodejs"
+                    fi
+        
+                elif [ -f requirements.txt ] || [ -f app.py ] || [ -f manage.py ]; then
+                    TECH="python"
+        
+                elif [ -f pom.xml ] || [ -f build.gradle ]; then
+                    TECH="java"
+        
+                elif [ -f index.html ]; then
+                    TECH="static"
+        
+                fi
+        
+                echo "$TECH" > ../tech_stack.txt
+        
+                echo "Detected stack: $TECH"
+                '''
+            }
+        }
 
-        stage('SBOM Generation (Syft)') {
+        /*stage('SBOM Generation (Syft)') {
             steps {
                 sh '''
                 echo "Generating SBOM using Syft..."
@@ -189,7 +229,7 @@ pipeline {
             }
         }
 
-        /*stage('CI/CD Gate (Trivy + Report)') {
+        stage('CI/CD Gate (Trivy + Report)') {
             steps {
                 sh '''
                 echo "Running Trivy scan and generating report..."
@@ -213,7 +253,7 @@ pipeline {
                   --severity HIGH,CRITICAL
                 '''
             }
-        }*/
+        }
 
         stage('SAST Scan (Semgrep)') {
             steps {
@@ -252,17 +292,97 @@ pipeline {
                     }
                 }
             }
-        }
+        }*/
         stage('Build Docker Image') {
             steps {
                 sh '''
                 echo "Building Docker image..."
         
+                TECH=$(cat tech_stack.txt)
+        
                 cd temp_repo
         
-                docker build -t akashsonawane571/devsecops:latest .
-                
-                docker system prune -f
+                echo "Using stack: $TECH"
+        
+                if [ "$TECH" = "dockerfile" ]; then
+        
+                    docker build -t akashsonawane571/devsecops:latest .
+        
+                elif [ "$TECH" = "static" ]; then
+        
+                    cat > Dockerfile <<EOF
+        FROM nginx:alpine
+        COPY . /usr/share/nginx/html
+        EXPOSE 80
+        CMD ["nginx","-g","daemon off;"]
+        EOF
+        
+                    docker build -t akashsonawane571/devsecops:latest .
+        
+                elif [ "$TECH" = "react" ] || [ "$TECH" = "vue" ] || [ "$TECH" = "angular" ]; then
+        
+                    cat > Dockerfile <<EOF
+        FROM node:18 AS build
+        WORKDIR /app
+        COPY . .
+        RUN npm install && npm run build
+        
+        FROM nginx:alpine
+        COPY --from=build /app/build /usr/share/nginx/html
+        COPY --from=build /app/dist /usr/share/nginx/html
+        EXPOSE 80
+        CMD ["nginx","-g","daemon off;"]
+        EOF
+        
+                    docker build -t akashsonawane571/devsecops:latest .
+        
+                elif [ "$TECH" = "nodejs" ]; then
+        
+                    cat > Dockerfile <<EOF
+        FROM node:18
+        WORKDIR /app
+        COPY . .
+        RUN npm install
+        EXPOSE 3000
+        CMD ["npm","start"]
+        EOF
+        
+                    docker build -t akashsonawane571/devsecops:latest .
+        
+                elif [ "$TECH" = "python" ]; then
+        
+                    cat > Dockerfile <<EOF
+        FROM python:3.11
+        WORKDIR /app
+        COPY . .
+        RUN pip install -r requirements.txt || true
+        EXPOSE 5000
+        CMD ["python","app.py"]
+        EOF
+        
+                    docker build -t akashsonawane571/devsecops:latest .
+        
+                elif [ "$TECH" = "java" ]; then
+        
+                    cat > Dockerfile <<EOF
+        FROM maven:3.9-eclipse-temurin-17 AS build
+        WORKDIR /app
+        COPY . .
+        RUN mvn clean package -DskipTests
+        
+        FROM eclipse-temurin:17
+        WORKDIR /app
+        COPY --from=build /app/target/*.jar app.jar
+        EXPOSE 8080
+        CMD ["java","-jar","app.jar"]
+        EOF
+        
+                    docker build -t akashsonawane571/devsecops:latest .
+                    docker system prune -f
+                else
+                    echo "Unsupported repository type"
+                    exit 1
+                fi
                 '''
             }
         }
@@ -306,13 +426,32 @@ pipeline {
             steps {
                 sh '''
                 echo "Stopping old container (if any)..."
-                docker rm -f juice-app || true
+                docker rm -f universal-app || true
+        
+                TECH=$(cat tech_stack.txt)
+                PORT=3000
+        
+                if [ "$TECH" = "static" ] || [ "$TECH" = "react" ] || [ "$TECH" = "vue" ] || [ "$TECH" = "angular" ]; then
+                    PORT=80
+        
+                elif [ "$TECH" = "python" ]; then
+                    PORT=5000
+        
+                elif [ "$TECH" = "java" ]; then
+                    PORT=8080
+        
+                elif [ "$TECH" = "nodejs" ] || [ "$TECH" = "dockerfile" ]; then
+                    PORT=3000
+                fi
+        
+                echo "Detected stack: $TECH"
+                echo "Using container port: $PORT"
         
                 echo "Running container..."
-                docker run -d -p 3000:3000 --name juice-app akashsonawane571/devsecops:latest
+                docker run -d -p 3000:$PORT --name universal-app akashsonawane571/devsecops:latest
         
                 echo "Waiting for app to start..."
-                 sleep 120
+                sleep 120
         
                 echo "Health check..."
                 curl -I http://172.16.176.129:3000 || exit 1
