@@ -45,7 +45,7 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        /*stage('Install Dependencies') {
             steps {
                 sh '''
                 echo "Installing dependencies with cache..."
@@ -56,7 +56,7 @@ pipeline {
                 npm install --ignore-scripts --cache ../.npm-cache --prefer-offline
                 '''
             }
-        }
+        }*/
         stage('Detect Tech Stack') {
             steps {
                 sh '''
