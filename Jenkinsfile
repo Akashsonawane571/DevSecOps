@@ -23,7 +23,7 @@ pipeline {
             steps {
                 echo "Cloning repository..."
                 sh '''
-                git clone --depth=1 https://github.com/akshaynalkol/YummyRestaurant_Website temp_repo
+                git clone --depth=1 https://github.com/juice-shop/juice-shop.git temp_repo
                 '''
             }
         }
@@ -390,7 +390,7 @@ pipeline {
                 set -e
         
                 echo "Preparing to run application on port 3000..."
-        
+                docker system prune -f
                 # Remove old known containers
                 docker rm -f universal-app >/dev/null 2>&1 || true
                 docker rm -f juice-app >/dev/null 2>&1 || true
