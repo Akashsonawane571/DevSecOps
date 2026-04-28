@@ -387,37 +387,58 @@ pipeline {
         stage('Run Application') {
             steps {
                 sh '''
-                echo "Stopping old container (if any)..."
-                docker system prune -f
-                docker rm -f universal-app || true
+                set -e
+        
+                echo "Preparing to run application on port 3000..."
+        
+                # Remove old known containers
+                docker rm -f universal-app >/dev/null 2>&1 || true
+                docker rm -f juice-app >/dev/null 2>&1 || true
+        
+                # Check if port 3000 is in use
+                if ss -tulpn | grep -q ':3000 '; then
+                    echo "Port 3000 is already in use."
+        
+                    # Find container using port 3000 and remove it
+                    CONTAINER_ID=$(docker ps -q --filter publish=3000)
+        
+                    if [ -n "$CONTAINER_ID" ]; then
+                        echo "Removing container using port 3000: $CONTAINER_ID"
+                        docker rm -f $CONTAINER_ID
+                    else
+                        echo "Port 3000 used by non-docker process."
+                        echo "Please free the port manually."
+                        exit 1
+                    fi
+                fi
         
                 TECH=$(cat tech_stack.txt)
-                PORT=3000
+                CONTAINER_PORT=3000
         
                 if [ "$TECH" = "static" ] || [ "$TECH" = "react" ] || [ "$TECH" = "vue" ] || [ "$TECH" = "angular" ]; then
-                    PORT=80
-        
+                    CONTAINER_PORT=80
                 elif [ "$TECH" = "python" ]; then
-                    PORT=5000
-        
+                    CONTAINER_PORT=5000
                 elif [ "$TECH" = "java" ]; then
-                    PORT=8080
-        
-                elif [ "$TECH" = "nodejs" ] || [ "$TECH" = "dockerfile" ]; then
-                    PORT=3000
+                    CONTAINER_PORT=8080
                 fi
         
                 echo "Detected stack: $TECH"
-                echo "Using container port: $PORT"
+                echo "Running container port: $CONTAINER_PORT"
+                echo "Host port: 3000"
         
-                echo "Running container..."
-                docker run -d -p 3000:$PORT --name universal-app akashsonawane571/devsecops:latest
+                docker run -d \
+                  -p 3000:$CONTAINER_PORT \
+                  --name universal-app \
+                  akashsonawane571/devsecops:latest
         
-                echo "Waiting for app to start..."
-                sleep 120
+                echo "Waiting for application startup..."
+                sleep 60
         
                 echo "Health check..."
                 curl -I http://172.16.176.129:3000 || exit 1
+        
+                echo "Application started successfully."
                 '''
             }
         }
