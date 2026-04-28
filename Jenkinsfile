@@ -307,6 +307,7 @@ pipeline {
         
                 echo "Detected stack: $TECH"
         
+                # Always start fresh
                 rm -f Dockerfile
         
                 if [ "$TECH" = "dockerfile" ]; then
@@ -315,7 +316,7 @@ pipeline {
         
                 elif [ "$TECH" = "static" ]; then
         
-                    echo 'FROM nginx:alpine' >> Dockerfile
+                    echo 'FROM nginx:alpine' > Dockerfile
                     echo 'WORKDIR /usr/share/nginx/html' >> Dockerfile
                     echo 'COPY . .' >> Dockerfile
                     echo 'EXPOSE 80' >> Dockerfile
@@ -323,33 +324,34 @@ pipeline {
         
                 elif [ "$TECH" = "react" ] || [ "$TECH" = "vue" ] || [ "$TECH" = "angular" ]; then
         
-                    echo 'FROM node:18 AS build' >> Dockerfile
-                    echo 'WORKDIR /app' >> Dockerfile    
+                    echo 'FROM node:18 AS build' > Dockerfile
+                    echo 'WORKDIR /app' >> Dockerfile
                     echo 'COPY package*.json ./' >> Dockerfile
+                    echo 'RUN npm cache clean --force' >> Dockerfile
                     echo 'RUN npm install --legacy-peer-deps --include=dev' >> Dockerfile
                     echo 'COPY . .' >> Dockerfile
                     echo 'RUN npm run build' >> Dockerfile
-                    echo 'RUN if [ -d build ]; then cp -r build /output; elif [ -d dist ]; then cp -r dist /output; fi' >> Dockerfile
+                    echo 'RUN if [ -d build ]; then cp -r build /output; elif [ -d dist ]; then cp -r dist /output; else mkdir /output; fi' >> Dockerfile
                     echo 'FROM nginx:alpine' >> Dockerfile
                     echo 'RUN rm -rf /usr/share/nginx/html/*' >> Dockerfile
-                    echo 'COPY --from=build /app/build /usr/share/nginx/html' >> Dockerfile
-                    echo 'COPY --from=build /app/dist /usr/share/nginx/html' >> Dockerfile
+                    echo 'COPY --from=build /output /usr/share/nginx/html' >> Dockerfile
                     echo 'EXPOSE 80' >> Dockerfile
                     echo 'CMD ["nginx","-g","daemon off;"]' >> Dockerfile
         
                 elif [ "$TECH" = "nodejs" ]; then
         
-                    echo 'FROM node:18' >> Dockerfile
+                    echo 'FROM node:18' > Dockerfile
                     echo 'WORKDIR /app' >> Dockerfile
                     echo 'COPY package*.json ./' >> Dockerfile
-                    echo 'RUN npm install' >> Dockerfile
+                    echo 'RUN npm cache clean --force' >> Dockerfile
+                    echo 'RUN npm install --legacy-peer-deps' >> Dockerfile
                     echo 'COPY . .' >> Dockerfile
                     echo 'EXPOSE 3000' >> Dockerfile
                     echo 'CMD ["npm","start"]' >> Dockerfile
         
                 elif [ "$TECH" = "python" ]; then
         
-                    echo 'FROM python:3.11-slim' >> Dockerfile
+                    echo 'FROM python:3.11-slim' > Dockerfile
                     echo 'WORKDIR /app' >> Dockerfile
                     echo 'COPY . .' >> Dockerfile
                     echo 'RUN pip install --no-cache-dir -r requirements.txt || true' >> Dockerfile
@@ -358,7 +360,7 @@ pipeline {
         
                 elif [ "$TECH" = "java" ]; then
         
-                    echo 'FROM maven:3.9-eclipse-temurin-17 AS build' >> Dockerfile
+                    echo 'FROM maven:3.9-eclipse-temurin-17 AS build' > Dockerfile
                     echo 'WORKDIR /app' >> Dockerfile
                     echo 'COPY . .' >> Dockerfile
                     echo 'RUN mvn clean package -DskipTests' >> Dockerfile
@@ -376,7 +378,7 @@ pipeline {
                 echo "Dockerfile preview:"
                 cat Dockerfile
         
-                docker build -t $IMAGE .
+                docker build --no-cache -t $IMAGE .
         
                 echo "Image build completed: $IMAGE"
                 '''
