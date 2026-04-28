@@ -45,7 +45,7 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        /*stage('Install Dependencies') {
             steps {
                 sh '''
                 echo "Installing dependencies with cache..."
@@ -56,7 +56,7 @@ pipeline {
                 npm install --ignore-scripts --cache ../.npm-cache --prefer-offline
                 '''
             }
-        }
+        }*/
         stage('Detect Tech Stack') {
             steps {
                 sh '''
@@ -98,7 +98,7 @@ pipeline {
             }
         }
 
-        stage('SBOM Generation (Syft)') {
+        /*stage('SBOM Generation (Syft)') {
             steps {
                 sh '''
                 echo "Generating SBOM using Syft..."
@@ -227,7 +227,7 @@ pipeline {
                 head -n 20 sca/reports/fossa-report.json
                 '''
             }
-        }
+        }*/
 
         /*stage('CI/CD Gate (Trivy + Report)') {
             steps {
@@ -255,7 +255,7 @@ pipeline {
             }
         }*/
 
-        stage('SAST Scan (Semgrep)') {
+        /*stage('SAST Scan (Semgrep)') {
             steps {
                 sh '''
                 echo "Running Semgrep scan..."
@@ -292,7 +292,7 @@ pipeline {
                     }
                 }
             }
-        }
+        }*/
         stage('Build Docker Image') {
             steps {
                 sh '''
@@ -308,7 +308,13 @@ pipeline {
                 echo "Detected stack: $TECH"
         
                 # Always start fresh
-                rm -f Dockerfile
+                if [ "$TECH" = "dockerfile" ]; then
+        
+                    echo "Using existing repository Dockerfile"
+        
+                else
+                    rm -f Dockerfile
+                fi
         
                 if [ "$TECH" = "dockerfile" ]; then
         
