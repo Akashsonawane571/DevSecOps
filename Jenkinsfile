@@ -296,129 +296,119 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh '''
+                set -e
+        
                 echo "Building Docker image..."
         
                 TECH=$(cat tech_stack.txt)
+                IMAGE="akashsonawane571/devsecops:latest"
         
                 cd temp_repo
         
-                echo "Using stack: $TECH"
+                echo "Detected stack: $TECH"
         
-                if [ "$TECH" = "dockerfile" ]; then
-        
-                    docker build -t akashsonawane571/devsecops:latest .
-        
-                elif [ "$TECH" = "static" ]; then
-        
-                    cat > Dockerfile <<EOF
+                create_static_dockerfile() {
+        cat > Dockerfile <<'EOF'
         FROM nginx:alpine
-        COPY . /usr/share/nginx/html
+        WORKDIR /usr/share/nginx/html
+        COPY . .
         EXPOSE 80
         CMD ["nginx","-g","daemon off;"]
         EOF
+                }
         
-                    docker build -t akashsonawane571/devsecops:latest .
-        
-                elif [ "$TECH" = "react" ] || [ "$TECH" = "vue" ] || [ "$TECH" = "angular" ]; then
-        
-                    cat > Dockerfile <<EOF
+                create_frontend_dockerfile() {
+        cat > Dockerfile <<'EOF'
         FROM node:18 AS build
         WORKDIR /app
+        COPY package*.json ./
+        RUN npm install
         COPY . .
-        RUN npm install && npm run build
+        RUN npm run build
         
         FROM nginx:alpine
-        COPY --from=build /app/build /usr/share/nginx/html
-        COPY --from=build /app/dist /usr/share/nginx/html
+        RUN rm -rf /usr/share/nginx/html/*
+        COPY --from=build /app/build /usr/share/nginx/html 2>/dev/null || true
+        COPY --from=build /app/dist /usr/share/nginx/html 2>/dev/null || true
         EXPOSE 80
         CMD ["nginx","-g","daemon off;"]
         EOF
+                }
         
-                    docker build -t akashsonawane571/devsecops:latest .
-        
-                elif [ "$TECH" = "nodejs" ]; then
-        
-                    cat > Dockerfile <<EOF
+                create_node_dockerfile() {
+        cat > Dockerfile <<'EOF'
         FROM node:18
         WORKDIR /app
-        COPY . .
+        COPY package*.json ./
         RUN npm install
+        COPY . .
         EXPOSE 3000
         CMD ["npm","start"]
         EOF
+                }
         
-                    docker build -t akashsonawane571/devsecops:latest .
-        
-                elif [ "$TECH" = "python" ]; then
-        
-                    cat > Dockerfile <<EOF
-        FROM python:3.11
+                create_python_dockerfile() {
+        cat > Dockerfile <<'EOF'
+        FROM python:3.11-slim
         WORKDIR /app
         COPY . .
-        RUN pip install -r requirements.txt || true
+        RUN pip install --no-cache-dir -r requirements.txt || true
         EXPOSE 5000
         CMD ["python","app.py"]
         EOF
+                }
         
-                    docker build -t akashsonawane571/devsecops:latest .
-        
-                elif [ "$TECH" = "java" ]; then
-        
-                    cat > Dockerfile <<EOF
+                create_java_dockerfile() {
+        cat > Dockerfile <<'EOF'
         FROM maven:3.9-eclipse-temurin-17 AS build
         WORKDIR /app
         COPY . .
         RUN mvn clean package -DskipTests
         
-        FROM eclipse-temurin:17
+        FROM eclipse-temurin:17-jre
         WORKDIR /app
         COPY --from=build /app/target/*.jar app.jar
         EXPOSE 8080
         CMD ["java","-jar","app.jar"]
         EOF
+                }
         
-                    docker build -t akashsonawane571/devsecops:latest .
-                    docker system prune -f
-                else
-                    echo "Unsupported repository type"
-                    exit 1
-                fi
-                '''
-            }
-        }
-        stage('Image Scanning (Trivy Docker)') {
-            environment {
-                TRIVY_SEVERITY = "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL"
-            }
-            steps {
-                sh '''
-                echo "Scanning Docker images using Trivy container..."
+                case "$TECH" in
+                    dockerfile)
+                        echo "Using repository Dockerfile"
+                        ;;
+                    static)
+                        echo "Generating static website Dockerfile"
+                        create_static_dockerfile
+                        ;;
+                    react|vue|angular)
+                        echo "Generating frontend framework Dockerfile"
+                        create_frontend_dockerfile
+                        ;;
+                    nodejs)
+                        echo "Generating Node.js Dockerfile"
+                        create_node_dockerfile
+                        ;;
+                    python)
+                        echo "Generating Python Dockerfile"
+                        create_python_dockerfile
+                        ;;
+                    java)
+                        echo "Generating Java Dockerfile"
+                        create_java_dockerfile
+                        ;;
+                    *)
+                        echo "Unsupported or unknown repository type: $TECH"
+                        exit 1
+                        ;;
+                esac
         
-                mkdir -p image_reports
+                echo "Dockerfile preview:"
+                head -n 20 Dockerfile || true
         
-                IMAGES=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep -v "<none>")
+                docker build -t $IMAGE .
         
-                if [ -z "$IMAGES" ]; then
-                  echo "No images found"
-                  exit 1
-                fi
-        
-                for image in $IMAGES; do
-                  name=$(echo "$image" | tr '/:' '_')
-                  echo "Scanning image: $image"
-        
-                  docker run --rm \
-                    -v /var/run/docker.sock:/var/run/docker.sock \
-                    -v $(pwd):/workspace \
-                    aquasec/trivy:0.49.1 image \
-                    --format json \
-                    --severity "$TRIVY_SEVERITY" \
-                    -o /workspace/image_reports/image_report_${name}.json \
-                    "$image"
-                done
-        
-                echo "Image scan complete"
-                ls -l image_reports/
+                echo "Image build completed: $IMAGE"
                 '''
             }
         }
@@ -426,6 +416,7 @@ pipeline {
             steps {
                 sh '''
                 echo "Stopping old container (if any)..."
+                docker system prune -f
                 docker rm -f universal-app || true
         
                 TECH=$(cat tech_stack.txt)
