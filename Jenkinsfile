@@ -571,9 +571,9 @@ pipeline {
         
                     echo "All uploads completed"
                     '''
-                }*/
+                }
             }
-        }
+        }*/
     } 
     post {
         always {
