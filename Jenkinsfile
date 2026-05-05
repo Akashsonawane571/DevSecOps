@@ -45,7 +45,7 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        /*stage('Install Dependencies') {
             steps {
                 sh '''
                 echo "Installing dependencies with cache..."
@@ -56,7 +56,7 @@ pipeline {
                 npm install --ignore-scripts --cache ../.npm-cache --prefer-offline
                 '''
             }
-        }
+        }*/
         stage('Detect Tech Stack') {
             steps {
                 sh '''
@@ -98,7 +98,7 @@ pipeline {
             }
         }
 
-        stage('SBOM Generation (Universal Syft)') {
+        /*stage('SBOM Generation (Universal Syft)') {
             steps {
                 sh '''
                 set -e
@@ -116,7 +116,7 @@ pipeline {
                 # Priority 1: node_modules (NodeJS)
                 if [ -d node_modules ]; then
                     echo "Node.js project detected → scanning node_modules"
-                    TARGET="dir:/workspace/temp_repo"
+                    TARGET="dir:/workspace/temp_repo/node_modules"
         
                 # Priority 2: Python virtual env
                 elif [ -d venv ] || [ -f requirements.txt ]; then
@@ -158,9 +158,9 @@ pipeline {
                 jq -r '.artifacts[].name' sca/sbom/sbom.json | head -n 20
                 '''
             }
-        }
+        }*/
 
-        /*stage('Vulnerability Scan (Grype)') {
+        stage('Vulnerability Scan (Grype)') {
             steps {
                 sh '''
                 echo "Running Grype scan..."
@@ -173,7 +173,7 @@ pipeline {
             }
         }
 
-        stage('Vulnerability Scan (Trivy)') {
+        /*stage('Vulnerability Scan (Trivy)') {
             steps {
                 sh '''
                 echo "Running Trivy scan..."
