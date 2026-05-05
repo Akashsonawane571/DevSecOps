@@ -336,7 +336,7 @@ pipeline {
                     }
                 }
             }
-        }*/
+        }
         stage('Build Docker Image') {
             steps {
                 sh '''
@@ -491,31 +491,34 @@ pipeline {
                 echo "Application started successfully."
                 '''
             }
-        }
+        }*/
         stage('Container Runtime Scan (Trivy Docker)') {
             steps {
                 sh '''
-                echo "Scanning running containers using Trivy container..."
+                set -e
+        
+                echo "Scanning running containers (IMAGE-based scan)..."
         
                 mkdir -p container_reports
         
                 for container in $(docker ps -q); do
-                  pid=$(docker inspect --format '{{.State.Pid}}' "$container")
-                  name=$(docker inspect --format '{{.Name}}' "$container" | sed 's/^\\/\\|\\/$//g')
         
-                  echo "Scanning container $name (PID: $pid)..."
+                    name=$(docker inspect --format '{{.Name}}' "$container" | sed 's/^\\/\\|\\/$//g')
+                    image=$(docker inspect --format '{{.Config.Image}}' "$container")
         
-                  docker run --rm \
-                    --pid=host \
-                    -v /proc:/proc \
-                    -v $(pwd):/workspace \
-                    aquasec/trivy:0.49.1 fs \
-                    --format json \
-                    -o /workspace/container_reports/container_report_${name}.json \
-                    /proc/$pid/root || echo "Failed to scan $name"
+                    echo "Scanning container: $name (Image: $image)"
+        
+                    docker run --rm \
+                      -v /var/run/docker.sock:/var/run/docker.sock \
+                      -v $(pwd):/workspace \
+                      aquasec/trivy:0.49.1 image \
+                      --format json \
+                      -o /workspace/container_reports/container_report_${name}.json \
+                      $image || echo "Scan failed for $name"
+        
                 done
         
-                echo "Container scan complete"
+                echo "Container scan completed"
                 ls -l container_reports/
                 '''
             }
