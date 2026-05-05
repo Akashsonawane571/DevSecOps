@@ -98,20 +98,64 @@ pipeline {
             }
         }
 
-        stage('SBOM Generation (Syft)') {
+        stage('SBOM Generation (Universal Syft)') {
             steps {
                 sh '''
-                echo "Generating SBOM using Syft..."
+                set -e
+        
+                echo "Starting Universal SBOM generation..."
         
                 mkdir -p sca/sbom
         
+                cd temp_repo
+        
+                echo "Detecting best scan target..."
+        
+                TARGET="dir:/workspace/temp_repo"
+        
+                # Priority 1: node_modules (NodeJS)
+                if [ -d node_modules ]; then
+                    echo "Node.js project detected → scanning node_modules"
+                    TARGET="dir:/workspace/temp_repo/node_modules"
+        
+                # Priority 2: Python virtual env
+                elif [ -d venv ] || [ -f requirements.txt ]; then
+                    echo "Python project detected → scanning full repo"
+                    TARGET="dir:/workspace/temp_repo"
+        
+                # Priority 3: Java (jar/target)
+                elif [ -d target ]; then
+                    echo "Java project detected → scanning build artifacts"
+                    TARGET="dir:/workspace/temp_repo/target"
+        
+                # Priority 4: Dockerfile present
+                elif [ -f Dockerfile ]; then
+                    echo "Docker project detected → scanning filesystem"
+                    TARGET="dir:/workspace/temp_repo"
+        
+                # Fallback
+                else
+                    echo "Unknown project → fallback scan"
+                    TARGET="dir:/workspace/temp_repo"
+                fi
+        
+                echo "Using scan target: $TARGET"
+        
+                cd ..
+        
                 docker run --rm \
                   -v $(pwd):/workspace \
-                  anchore/syft:latest dir:/workspace/temp_repo \
+                  anchore/syft:latest $TARGET \
+                  --scope all-layers \
                   --output json=/workspace/sca/sbom/sbom.json
         
-                echo "Verify SBOM:"
-                jq '.artifacts[].type' sca/sbom/sbom.json | sort | uniq
+                echo "SBOM generated successfully"
+        
+                echo "Quick validation:"
+                jq '.artifacts | length' sca/sbom/sbom.json
+        
+                echo "Top packages:"
+                jq -r '.artifacts[].name' sca/sbom/sbom.json | head -n 20
                 '''
             }
         }
