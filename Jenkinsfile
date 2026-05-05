@@ -238,7 +238,7 @@ pipeline {
                 head -n 20 sca/reports/osv-report.json
                 '''
             }
-        }*/
+        }
 
         stage('Policy Enforcement (FOSSA)') {
             steps {
@@ -273,7 +273,7 @@ pipeline {
             }
         }
 
-        /*stage('CI/CD Gate (Trivy + Report)') {
+        stage('CI/CD Gate (Trivy + Report)') {
             steps {
                 sh '''
                 echo "Running Trivy scan and generating report..."
@@ -297,7 +297,7 @@ pipeline {
                   --severity HIGH,CRITICAL
                 '''
             }
-        }
+        }*/
 
         stage('SAST Scan (Semgrep)') {
             steps {
@@ -320,7 +320,7 @@ pipeline {
             }
         }
 
-        stage('SonarQube Scan') {
+        /*stage('SonarQube Scan') {
             steps {
                 echo 'Starting SonarQube SAST Scan...'
                 withSonarQubeEnv('sonarqube') {
