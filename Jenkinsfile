@@ -297,7 +297,7 @@ pipeline {
                   --severity HIGH,CRITICAL
                 '''
             }
-        }*/
+        }
 
         stage('SAST Scan (Semgrep)') {
             steps {
@@ -318,9 +318,9 @@ pipeline {
                 ls -l sast/reports/
                 '''
             }
-        }
+        }*/
 
-        /*stage('SonarQube Scan') {
+        stage('SonarQube Scan') {
             steps {
                 echo 'Starting SonarQube SAST Scan...'
                 withSonarQubeEnv('sonarqube') {
@@ -337,7 +337,7 @@ pipeline {
                 }
             }
         }
-        stage('Build Docker Image') {
+        /*stage('Build Docker Image') {
             steps {
                 sh '''
                 set -e
