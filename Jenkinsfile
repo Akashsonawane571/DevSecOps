@@ -37,7 +37,7 @@ pipeline {
             }
         }
 
-        stage('Prepare SCA Directories') {
+        /*stage('Prepare SCA Directories') {
             steps {
                 sh '''
                 mkdir -p sca/sbom sca/reports sca/logs
@@ -56,7 +56,7 @@ pipeline {
                 npm install --ignore-scripts --cache ../.npm-cache --prefer-offline
                 '''
             }
-        }
+        }*/
         stage('Detect Tech Stack') {
             steps {
                 sh '''
@@ -107,7 +107,7 @@ pipeline {
         
                 docker run --rm \
                   -v $(pwd):/workspace \
-                  anchore/syft:latest dir:/workspace/temp_repo/node_modules \
+                  anchore/syft:latest dir:/workspace/temp_repo \
                   --output json=/workspace/sca/sbom/sbom.json
         
                 echo "Verify SBOM:"
