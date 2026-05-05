@@ -45,7 +45,7 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        /*stage('Install Dependencies') {
             steps {
                 sh '''
                 echo "Installing dependencies with cache..."
@@ -56,7 +56,7 @@ pipeline {
                 npm install --ignore-scripts --cache ../.npm-cache --prefer-offline
                 '''
             }
-        }
+        }*/
         stage('Detect Tech Stack') {
             steps {
                 sh '''
@@ -171,7 +171,7 @@ pipeline {
                   -o json > sca/reports/grype-report.json
                 '''
             }
-        }*/
+        }
 
         stage('Vulnerability Scan (Trivy)') {
             steps {
@@ -188,9 +188,9 @@ pipeline {
                 ls -l sca/reports/
                 '''
             }
-        }
+        }*/
 
-        /*stage('OSV Risk Enrichment') {
+        stage('OSV Risk Enrichment') {
             steps {
                 sh '''
                 echo "Running OSV enrichment..."
@@ -240,7 +240,7 @@ pipeline {
             }
         }
 
-        stage('Policy Enforcement (FOSSA)') {
+        /*stage('Policy Enforcement (FOSSA)') {
             steps {
                 sh '''
                 echo "Running FOSSA analysis + policy check..."
