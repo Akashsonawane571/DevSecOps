@@ -190,7 +190,7 @@ pipeline {
             }
         }*/
 
-        stage('OSV Risk Enrichment') {
+        /*stage('OSV Risk Enrichment') {
             steps {
                 sh '''
                 echo "Running OSV enrichment..."
@@ -238,9 +238,9 @@ pipeline {
                 head -n 20 sca/reports/osv-report.json
                 '''
             }
-        }
+        }*/
 
-        /*stage('Policy Enforcement (FOSSA)') {
+        stage('Policy Enforcement (FOSSA)') {
             steps {
                 sh '''
                 echo "Running FOSSA analysis + policy check..."
@@ -273,7 +273,7 @@ pipeline {
             }
         }
 
-        stage('CI/CD Gate (Trivy + Report)') {
+        /*stage('CI/CD Gate (Trivy + Report)') {
             steps {
                 sh '''
                 echo "Running Trivy scan and generating report..."
