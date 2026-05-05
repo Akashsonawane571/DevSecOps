@@ -318,7 +318,7 @@ pipeline {
                 ls -l sast/reports/
                 '''
             }
-        }*/
+        }
 
         stage('SonarQube Scan') {
             steps {
@@ -336,8 +336,8 @@ pipeline {
                     }
                 }
             }
-        }
-        /*stage('Build Docker Image') {
+        }*/
+        stage('Build Docker Image') {
             steps {
                 sh '''
                 set -e
@@ -520,7 +520,7 @@ pipeline {
                 '''
             }
         }
-        stage('DAST Scan (OWASP ZAP)') {
+        /*stage('DAST Scan (OWASP ZAP)') {
             steps {
                 sh '''
                 echo "Running OWASP ZAP scan..."
