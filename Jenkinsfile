@@ -45,7 +45,7 @@ pipeline {
             }
         }
 
-        /*stage('Install Dependencies') {
+        stage('Install Dependencies') {
             steps {
                 sh '''
                 echo "Installing dependencies with cache..."
@@ -56,7 +56,7 @@ pipeline {
                 npm install --ignore-scripts --cache ../.npm-cache --prefer-offline
                 '''
             }
-        }*/
+        }
         stage('Detect Tech Stack') {
             steps {
                 sh '''
@@ -98,7 +98,7 @@ pipeline {
             }
         }
 
-        /*stage('SBOM Generation (Syft)') {
+        stage('SBOM Generation (Syft)') {
             steps {
                 sh '''
                 echo "Generating SBOM using Syft..."
@@ -116,7 +116,7 @@ pipeline {
             }
         }
 
-        stage('Vulnerability Scan (Grype)') {
+        /*stage('Vulnerability Scan (Grype)') {
             steps {
                 sh '''
                 echo "Running Grype scan..."
@@ -227,9 +227,9 @@ pipeline {
                 head -n 20 sca/reports/fossa-report.json
                 '''
             }
-        }*/
+        }
 
-        /*stage('CI/CD Gate (Trivy + Report)') {
+        stage('CI/CD Gate (Trivy + Report)') {
             steps {
                 sh '''
                 echo "Running Trivy scan and generating report..."
@@ -253,9 +253,9 @@ pipeline {
                   --severity HIGH,CRITICAL
                 '''
             }
-        }*/
+        }
 
-        /*stage('SAST Scan (Semgrep)') {
+        stage('SAST Scan (Semgrep)') {
             steps {
                 sh '''
                 echo "Running Semgrep scan..."
@@ -292,7 +292,7 @@ pipeline {
                     }
                 }
             }
-        }*/
+        }
         stage('Build Docker Image') {
             steps {
                 sh '''
@@ -571,7 +571,7 @@ pipeline {
         
                     echo "All uploads completed"
                     '''
-                }
+                }*/
             }
         }
     } 
