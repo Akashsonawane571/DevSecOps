@@ -158,7 +158,7 @@ pipeline {
                 jq -r '.artifacts[].name' sca/sbom/sbom.json | head -n 20
                 '''
             }
-        }*/
+        }
 
         stage('Vulnerability Scan (Grype)') {
             steps {
@@ -171,9 +171,9 @@ pipeline {
                   -o json > sca/reports/grype-report.json
                 '''
             }
-        }
+        }*/
 
-        /*stage('Vulnerability Scan (Trivy)') {
+        stage('Vulnerability Scan (Trivy)') {
             steps {
                 sh '''
                 echo "Running Trivy scan..."
@@ -190,7 +190,7 @@ pipeline {
             }
         }
 
-        stage('OSV Risk Enrichment') {
+        /*stage('OSV Risk Enrichment') {
             steps {
                 sh '''
                 echo "Running OSV enrichment..."
