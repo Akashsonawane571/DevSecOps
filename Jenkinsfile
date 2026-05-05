@@ -116,7 +116,7 @@ pipeline {
                 # Priority 1: node_modules (NodeJS)
                 if [ -d node_modules ]; then
                     echo "Node.js project detected → scanning node_modules"
-                    TARGET="dir:/workspace/temp_repo/node_modules"
+                    TARGET="dir:/workspace/temp_repo"
         
                 # Priority 2: Python virtual env
                 elif [ -d venv ] || [ -f requirements.txt ]; then
