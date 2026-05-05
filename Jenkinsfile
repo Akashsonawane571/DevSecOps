@@ -37,7 +37,7 @@ pipeline {
             }
         }
 
-        /*stage('Prepare SCA Directories') {
+        stage('Prepare SCA Directories') {
             steps {
                 sh '''
                 mkdir -p sca/sbom sca/reports sca/logs
@@ -56,7 +56,7 @@ pipeline {
                 npm install --ignore-scripts --cache ../.npm-cache --prefer-offline
                 '''
             }
-        }*/
+        }
         stage('Detect Tech Stack') {
             steps {
                 sh '''
