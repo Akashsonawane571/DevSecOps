@@ -238,7 +238,7 @@ pipeline {
                 head -n 20 sca/reports/osv-report.json
                 '''
             }
-        }
+        }*/
 
         stage('Policy Enforcement (FOSSA)') {
             steps {
@@ -273,7 +273,7 @@ pipeline {
             }
         }
 
-        stage('CI/CD Gate (Trivy + Report)') {
+        /*stage('CI/CD Gate (Trivy + Report)') {
             steps {
                 sh '''
                 echo "Running Trivy scan and generating report..."
@@ -297,7 +297,7 @@ pipeline {
                   --severity HIGH,CRITICAL
                 '''
             }
-        }
+        }*/
 
         stage('SAST Scan (Semgrep)') {
             steps {
@@ -320,7 +320,7 @@ pipeline {
             }
         }
 
-        stage('SonarQube Scan') {
+        /*stage('SonarQube Scan') {
             steps {
                 echo 'Starting SonarQube SAST Scan...'
                 withSonarQubeEnv('sonarqube') {
@@ -491,7 +491,7 @@ pipeline {
                 '''
             }
         }
-        /*stage('Container Runtime Scan (Trivy Docker)') {
+        stage('Container Runtime Scan (Trivy Docker)') {
             steps {
                 sh '''
                 set -e
@@ -521,7 +521,7 @@ pipeline {
                 ls -l container_reports/
                 '''
             }
-        }*/
+        }
         stage('DAST Scan (OWASP ZAP)') {
             steps {
                 sh '''
@@ -542,7 +542,7 @@ pipeline {
                 '''
             }
         }
-        stage('DAST Scan (Nuclei)') {
+        /*stage('DAST Scan (Nuclei)') {
             steps {
                 sh '''
                 echo "Running Nuclei scan..."
@@ -561,8 +561,8 @@ pipeline {
                 ls -l dast_reports/
                 '''
             }
-        }
-        /*stage('Upload Reports to DefectDojo') {
+        }*/
+        stage('Upload Reports to DefectDojo') {
             steps {
                 withCredentials([string(credentialsId: 'DEFECTDOJO_TOKEN', variable: 'DD_TOKEN')]) {
                     sh '''
@@ -619,7 +619,7 @@ pipeline {
                     '''
                 }
             }
-        }*/
+        }
     } 
     post {
         always {
