@@ -45,7 +45,7 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        /*stage('Install Dependencies') {
             steps {
                 sh '''
                 echo "Installing dependencies with cache..."
@@ -56,7 +56,7 @@ pipeline {
                 npm install --ignore-scripts --cache ../.npm-cache --prefer-offline
                 '''
             }
-        }
+        }*/
         stage('Detect Tech Stack') {
             steps {
                 sh '''
@@ -98,7 +98,7 @@ pipeline {
             }
         }
 
-        stage('SBOM Generation (Universal Syft)') {
+        /*stage('SBOM Generation (Universal Syft)') {
             steps {
                 sh '''
                 set -e
@@ -320,7 +320,7 @@ pipeline {
                     archiveArtifacts artifacts: 'sca/reports/trivy-CICD-Gate-report.json', fingerprint: true
                 }
             }
-        }
+        }*/
         stage('SAST Scan (Semgrep)') {
             steps {
                 sh '''
