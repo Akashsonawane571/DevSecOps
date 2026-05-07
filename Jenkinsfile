@@ -433,14 +433,13 @@ pipeline {
                 echo "Image build completed: $IMAGE"
                 '''
             }
-        }
+        }*/
         stage('Run Application') {
             steps {
                 sh '''
                 set -e
         
                 echo "Preparing to run application on port 3000..."
-                docker system prune -f
                 # Remove old known containers
                 docker rm -f universal-app >/dev/null 2>&1 || true
                 docker rm -f juice-app >/dev/null 2>&1 || true
@@ -491,8 +490,8 @@ pipeline {
                 echo "Application started successfully."
                 '''
             }
-        }*/
-        stage('Container Runtime Scan (Trivy Docker)') {
+        }
+        /*stage('Container Runtime Scan (Trivy Docker)') {
             steps {
                 sh '''
                 set -e
@@ -522,8 +521,8 @@ pipeline {
                 ls -l container_reports/
                 '''
             }
-        }
-        /*stage('DAST Scan (OWASP ZAP)') {
+        }*/
+        stage('DAST Scan (OWASP ZAP)') {
             steps {
                 sh '''
                 echo "Running OWASP ZAP scan..."
@@ -563,7 +562,7 @@ pipeline {
                 '''
             }
         }
-        stage('Upload Reports to DefectDojo') {
+        /*stage('Upload Reports to DefectDojo') {
             steps {
                 withCredentials([string(credentialsId: 'DEFECTDOJO_TOKEN', variable: 'DD_TOKEN')]) {
                     sh '''
