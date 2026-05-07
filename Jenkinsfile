@@ -535,14 +535,15 @@ pipeline {
                   zaproxy/zap-stable \
                   zap-baseline.py \
                   -t http://172.16.176.129:3000 \
-                  -J zap-report.json || true
+                  -J zap-report.json \
+                  -x zap-report.xml || true
         
                 echo "ZAP scan completed"
                 ls -l dast_reports/
                 '''
             }
         }
-        /*stage('DAST Scan (Nuclei)') {
+        stage('DAST Scan (Nuclei)') {
             steps {
                 sh '''
                 echo "Running Nuclei scan..."
@@ -554,14 +555,16 @@ pipeline {
                   -v $(pwd)/dast_reports:/workspace \
                   projectdiscovery/nuclei:latest \
                   -u http://172.16.176.129:3000 \
-                  -jsonl \
-                  -o /workspace/nuclei-report.json
+                  -tags cves,misconfig,exposure \
+                  -severity critical,high,medium \
+                  -json-export /workspace/nuclei-report.json \
+                  -markdown-export /workspace/nuclei-markdown
         
                 echo "Nuclei scan completed"
                 ls -l dast_reports/
                 '''
             }
-        }*/
+        }
         stage('Upload Reports to DefectDojo') {
             steps {
                 withCredentials([string(credentialsId: 'DEFECTDOJO_TOKEN', variable: 'DD_TOKEN')]) {
@@ -573,13 +576,19 @@ pipeline {
                     ENGAGEMENT="Jenkins Pipeline Run"
         
                     upload_report() {
+        
                       FILE=$1
                       TYPE=$2
         
                       if [ -f "$FILE" ]; then
-                        echo "Uploading $FILE as $TYPE"
         
-                        curl -s -X POST "$DD_URL" \
+                        echo "================================================="
+                        echo "Uploading: $FILE"
+                        echo "Scan Type: $TYPE"
+                        echo "================================================="
+        
+                        RESPONSE=$(curl -s -w "\\nHTTP_STATUS:%{http_code}" \
+                          -X POST "$DD_URL" \
                           -H "Authorization: Token $DD_TOKEN" \
                           -F "file=@$FILE" \
                           -F "scan_type=$TYPE" \
@@ -587,34 +596,83 @@ pipeline {
                           -F "engagement_name=$ENGAGEMENT" \
                           -F "active=true" \
                           -F "verified=true" \
-                          || echo "Failed to upload $FILE"
+                          -F "scan_date=$(date +%F)")
+        
+                        echo "$RESPONSE"
+        
                       else
-                        echo "Skipping $FILE (not found)"
+                        echo "Skipping missing file: $FILE"
                       fi
                     }
         
-                    echo "==== SAST ===="
+                    echo ""
+                    echo "========== SAST REPORTS =========="
+        
                     upload_report "sast/reports/semgrep-report.json" "Semgrep JSON Report"
         
-                    echo "==== SCA ===="
+                    echo ""
+                    echo "========== SCA REPORTS =========="
+        
                     upload_report "sca/reports/trivy-report.json" "Trivy Scan"
+        
                     upload_report "sca/reports/grype-report.json" "Grype Scan"
         
-                    # Optional (future support / generic import)
                     upload_report "sca/sbom/sbom.json" "CycloneDX"
-                    upload_report "sca/reports/osv-report.json" "Generic Findings Import"
-                    upload_report "sca/reports/fossa-report.json" "Generic Findings Import"
         
-                    echo "==== IMAGE SCAN ===="
-                    upload_report "image_reports/final_image_scan.json" "Trivy Scan"
+                    # OPTIONAL
+                    # Generic import only if compatible format
+                    # upload_report "sca/reports/osv-report.json" "Generic Findings Import"
         
-                    echo "==== CONTAINER SCAN ===="
-                    upload_report "container_reports/container_report_juice-app.json" "Trivy Scan"
+                    # FOSSA JSON is NOT compatible directly
+                    # upload_report "sca/reports/fossa-report.json" "Generic Findings Import"
         
-                    echo "==== DAST ===="
-                    upload_report "dast_reports/zap-report.json" "ZAP Scan"
-                    upload_report "dast_reports/nuclei-report.json" "Nuclei Scan"
+                    echo ""
+                    echo "========== CONTAINER REPORTS =========="
         
+                    for report in container_reports/*.json; do
+                        [ -f "$report" ] && upload_report "$report" "Trivy Scan"
+                    done
+        
+                    echo ""
+                    echo "========== IMAGE REPORTS =========="
+        
+                    for report in image_reports/*.json; do
+                        [ -f "$report" ] && upload_report "$report" "Trivy Scan"
+                    done
+        
+                    echo ""
+                    echo "========== ZAP REPORTS =========="
+        
+                    for report in dast_reports/*zap*.json; do
+                        [ -f "$report" ] && upload_report "$report" "ZAP Scan"
+                    done
+        
+                    for report in dast_reports/*zap*.xml; do
+                        [ -f "$report" ] && upload_report "$report" "ZAP Scan"
+                    done
+        
+                    echo ""
+                    echo "========== NUCLEI REPORTS =========="
+        
+                    for report in dast_reports/*nuclei*.json; do
+                        [ -f "$report" ] && upload_report "$report" "Nuclei Scan"
+                    done
+        
+                    echo ""
+                    echo "========== SONARQUBE REPORTS =========="
+        
+                    for report in sonar_reports/*.json; do
+                        [ -f "$report" ] && upload_report "$report" "SonarQube Scan"
+                    done
+        
+                    echo ""
+                    echo "========== GENERIC REPORTS =========="
+        
+                    for report in generic_reports/*.json; do
+                        [ -f "$report" ] && upload_report "$report" "Generic Findings Import"
+                    done
+        
+                    echo ""
                     echo "All uploads completed"
                     '''
                 }
