@@ -158,13 +158,12 @@ pipeline {
                 jq -r '.artifacts[].name' sca/sbom/sbom.json | head -n 20
                 '''
             }
-        }
-        post {
-            always {
-                archiveArtifacts artifacts: 'sca/sbom/*.json', fingerprint: true
+            post {
+                always {
+                    archiveArtifacts artifacts: 'sca/sbom/*.json', fingerprint: true
+                }
             }
         }
-
         stage('Vulnerability Scan (Grype)') {
             steps {
                 sh '''
@@ -176,13 +175,12 @@ pipeline {
                   -o json > sca/reports/grype-report.json
                 '''
             }
-        }
-        post {
-            always {
-                archiveArtifacts artifacts: 'sca/reports/grype-report.json', fingerprint: true
+            post {
+                always {
+                    archiveArtifacts artifacts: 'sca/reports/grype-report.json', fingerprint: true
+                }
             }
         }
-
         stage('Vulnerability Scan (Trivy)') {
             steps {
                 sh '''
@@ -198,13 +196,12 @@ pipeline {
                 ls -l sca/reports/
                 '''
             }
-        }
-        post {
-            always {
-                archiveArtifacts artifacts: 'sca/reports/trivy-report.json', fingerprint: true
+            post {
+                always {
+                    archiveArtifacts artifacts: 'sca/reports/trivy-report.json', fingerprint: true
+                }
             }
         }
-
         stage('OSV Risk Enrichment') {
             steps {
                 sh '''
@@ -252,13 +249,12 @@ pipeline {
                 ls -l sca/reports/
                 '''
             }
-        }
-        post {
-            always {
-                archiveArtifacts artifacts: 'sca/reports/osv-report.json', fingerprint: true
+            post {
+                always {
+                    archiveArtifacts artifacts: 'sca/reports/osv-report.json', fingerprint: true
+                }
             }
-        }
-
+        }        
         stage('Policy Enforcement (FOSSA)') {
             steps {
                 sh '''
@@ -289,13 +285,12 @@ pipeline {
                 ls -l sca/reports/
                 '''
             }
-        }
-        post {
-            always {
-                archiveArtifacts artifacts: 'sca/reports/fossa-report.json', fingerprint: true
+            post {
+                always {
+                    archiveArtifacts artifacts: 'sca/reports/fossa-report.json', fingerprint: true
+                }
             }
         }
-
         stage('CI/CD Gate (Trivy + Report)') {
             steps {
                 sh '''
@@ -308,7 +303,7 @@ pipeline {
                   aquasec/trivy:0.49.1 fs /workspace/temp_repo \
                   --severity HIGH,CRITICAL \
                   --format json \
-                  -o /workspace/sca/reports/trivy-report.json
+                  -o /workspace/sca/reports/trivy-CICD-Gate-report.json
         
                 echo "Trivy report generated:"
                 ls -l sca/reports/
@@ -320,13 +315,12 @@ pipeline {
                   --severity HIGH,CRITICAL
                 '''
             }
-        }
-        post {
-            always {
-                archiveArtifacts artifacts: 'sca/reports/trivy-report.json', fingerprint: true
+            post {
+                always {
+                    archiveArtifacts artifacts: 'sca/reports/trivy-CICD-Gate-report.json', fingerprint: true
+                }
             }
         }
-
         stage('SAST Scan (Semgrep)') {
             steps {
                 sh '''
@@ -346,13 +340,12 @@ pipeline {
                 ls -l sast/reports/
                 '''
             }
-        }
-        post {
-            always {
-                archiveArtifacts artifacts: 'sast/reports/*.json', fingerprint: true
+            post {
+                always {
+                    archiveArtifacts artifacts: 'sast/reports/semgrep-report.json', fingerprint: true
+                }
             }
-        }
-
+        }       
         /*stage('SonarQube Scan') {
             steps {
                 echo 'Starting SonarQube SAST Scan...'
@@ -554,10 +547,10 @@ pipeline {
                 ls -l container_reports/
                 '''
             }
-        }
-        post {
-            always {
-                archiveArtifacts artifacts: 'container_reports/*.json', fingerprint: true
+            post {
+                always {
+                    archiveArtifacts artifacts: 'container_reports/*.json', fingerprint: true
+                }
             }
         }
         stage('DAST Scan (OWASP ZAP)') {
@@ -580,10 +573,10 @@ pipeline {
                 ls -l dast_reports/
                 '''
             }
-        }
-        post {
-            always {
-                archiveArtifacts artifacts: 'dast_reports/zap-report.*', fingerprint: true
+            post {
+                always {
+                    archiveArtifacts artifacts: 'dast_reports/zap-report.*', fingerprint: true
+                }
             }
         }
         stage('DAST Scan (Nuclei)') {
@@ -607,10 +600,10 @@ pipeline {
                 ls -l dast_reports/
                 '''
             }
-        }
-        post {
-            always {
-                archiveArtifacts artifacts: 'dast_reports/nuclei-*', fingerprint: true
+            post {
+                always {
+                    archiveArtifacts artifacts: 'dast_reports/nuclei-*', fingerprint: true
+                }
             }
         }
         stage('Upload Reports to DefectDojo') {
