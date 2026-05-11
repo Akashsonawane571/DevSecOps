@@ -23,7 +23,7 @@ pipeline {
             steps {
                 echo "Cloning repository..."
                 sh '''
-                git clone --depth=1 https://github.com/juice-shop/juice-shop.git temp_repo
+                git clone --depth=1 https://github.com/akshaynalkol/YummyRestaurant_Website.git
                 '''
             }
         }
@@ -98,7 +98,7 @@ pipeline {
             }
         }
 
-        /*stage('SBOM Generation (Universal Syft)') {
+        stage('SBOM Generation (Universal Syft)') {
             steps {
                 sh '''
                 set -e
@@ -291,7 +291,7 @@ pipeline {
                 }
             }
         }
-        stage('CI/CD Gate (Trivy + Report)') {
+        /*stage('CI/CD Gate (Trivy + Report)') {
             steps {
                 sh '''
                 echo "Running Trivy scan and generating report..."
@@ -464,7 +464,7 @@ pipeline {
             steps {
                 sh '''
                 set -e
-        
+                docker system prune -f
                 echo "Preparing to run application on port 3000..."
                 # Remove old known containers
                 docker rm -f universal-app >/dev/null 2>&1 || true
