@@ -23,7 +23,8 @@ pipeline {
             steps {
                 echo "Cloning repository..."
                 sh '''
-                git clone --depth=1 https://github.com/akshaynalkol/YummyRestaurant_Website.git
+                rm -rf temp_repo
+                git clone --depth=1 https://github.com/akshaynalkol/YummyRestaurant_Website.git temp_repo
                 '''
             }
         }
