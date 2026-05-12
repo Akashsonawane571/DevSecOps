@@ -24,7 +24,7 @@ pipeline {
                 echo "Cloning repository..."
                 sh '''
                 rm -rf temp_repo
-                git clone --depth=1 https://github.com/uber/Python-Sample-Application.git temp_repo
+                git clone --depth=1 https://github.com/juice-shop/juice-shop.git temp_repo
                 '''
             }
         }
